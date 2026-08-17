@@ -152,19 +152,19 @@ export default function Home() {
             singles.map((track, i) => (
               <StaggerItem key={track._id}>
               <div
-                className="flex items-center gap-4 bg-surface rounded-lg px-4 py-3 border border-border hover:border-accent/40 transition-colors group"
+                className="flex items-center gap-3 bg-surface rounded-lg px-3 py-3 border border-border hover:border-accent/40 transition-colors group sm:px-4 sm:gap-4"
               >
-                <span className="text-foreground/30 text-sm w-6 text-right">
+                <span className="text-foreground/30 text-xs w-4 text-right flex-shrink-0 hidden sm:block">
                   {i + 1}
                 </span>
                 {track.coverImageUrl && (
                   <img
                     src={track.coverImageUrl}
                     alt={track.title}
-                    className="w-10 h-10 rounded object-cover"
+                    className="w-10 h-10 rounded object-cover flex-shrink-0"
                   />
                 )}
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 overflow-hidden">
                   <h3 className="font-medium text-sm truncate">{track.title}</h3>
                   <p className="text-foreground/40 text-xs">{track.year}</p>
                 </div>
@@ -176,7 +176,7 @@ export default function Home() {
                     onPlay={setCurrentlyPlaying}
                   />
                 )}
-                <span className="text-accent font-semibold text-sm">
+                <span className="text-accent font-semibold text-xs sm:text-sm flex-shrink-0">
                   &pound;{track.priceMp3.toFixed(2)}
                 </span>
                 <BuyButton

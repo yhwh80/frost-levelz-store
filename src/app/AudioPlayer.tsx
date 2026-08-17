@@ -1,5 +1,7 @@
 "use client";
 
+import { useRef, useState, useEffect, useCallback } from "react";
+
 interface AudioPlayerProps {
   src: string;
   trackId: string;
@@ -7,14 +9,84 @@ interface AudioPlayerProps {
   onPlay: (trackId: string) => void;
 }
 
-export default function AudioPlayer({ src }: AudioPlayerProps) {
+export default function AudioPlayer({
+  src,
+  trackId,
+  currentlyPlaying,
+  onPlay,
+}: AudioPlayerProps) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (currentlyPlaying !== trackId && isPlaying && audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
+  }, [currentlyPlaying, trackId, isPlaying]);
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+      }
+    };
+  }, []);
+
+  const togglePlay = useCallback(async () => {
+    if (!audioRef.current) {
+      const audio = new Audio(src);
+      audio.onended = () => {
+        setIsPlaying(false);
+      };
+      audio.onerror = () => {
+        setIsPlaying(false);
+        setIsLoading(false);
+      };
+      audioRef.current = audio;
+    }
+
+    const audio = audioRef.current;
+
+    if (isPlaying) {
+      audio.pause();
+      setIsPlaying(false);
+    } else {
+      onPlay(trackId);
+      setIsLoading(true);
+      try {
+        await audio.play();
+        setIsPlaying(true);
+      } catch {
+        setIsPlaying(false);
+      }
+      setIsLoading(false);
+    }
+  }, [isPlaying, onPlay, trackId, src]);
+
   return (
-    <audio
-      controls
-      preload="none"
-      src={src}
-      className="h-8 w-40"
-      style={{ filter: "invert(1) hue-rotate(180deg) brightness(0.8)" }}
-    />
+    <button
+      onClick={togglePlay}
+      className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full bg-accent/15 hover:bg-accent/30 text-accent transition-colors active:scale-95"
+      aria-label={isPlaying ? "Pause" : "Play preview"}
+    >
+      {isLoading ? (
+        <svg className="w-4 h-4 animate-spin" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="8" cy="8" r="6" opacity="0.3" />
+          <path d="M8 2a6 6 0 0 1 6 6" />
+        </svg>
+      ) : isPlaying ? (
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+          <rect x="2.5" y="1.5" width="3.5" height="11" rx="1" />
+          <rect x="8" y="1.5" width="3.5" height="11" rx="1" />
+        </svg>
+      ) : (
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+          <path d="M4 2v10l8-5L4 2z" />
+        </svg>
+      )}
+    </button>
   );
 }
