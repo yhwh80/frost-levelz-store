@@ -143,14 +143,15 @@ export default function Home() {
         <ScrollReveal>
           <h2 className="frost-heading text-2xl font-bold mb-8 uppercase tracking-wide">Singles</h2>
         </ScrollReveal>
-        <StaggerContainer className="flex flex-col gap-2">
+        <ScrollReveal delay={0.15}>
+        <div className="flex flex-col gap-2">
           {tracks === undefined ? (
             <div className="text-foreground/30 text-sm">Loading...</div>
           ) : singles.length === 0 ? (
             <div className="text-foreground/30 text-sm">No singles yet</div>
           ) : (
             singles.map((track, i) => (
-              <StaggerItem key={track._id}>
+              <div key={track._id}>
               <div
                 className="flex items-center gap-3 bg-surface rounded-lg px-3 py-3 border border-border hover:border-accent/40 transition-colors group sm:px-4 sm:gap-4"
               >
@@ -185,10 +186,11 @@ export default function Home() {
                   priceWav={track.priceWav}
                 />
               </div>
-              </StaggerItem>
+              </div>
             ))
           )}
-        </StaggerContainer>
+        </div>
+        </ScrollReveal>
       </section>
 
       {/* About Section */}
