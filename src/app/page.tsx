@@ -5,6 +5,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import IceParticles from "./IceParticles";
 import AudioPlayer from "./AudioPlayer";
+import BuyButton from "./BuyButton";
 
 export default function Home() {
   const tracks = useQuery(api.tracks.list);
@@ -76,9 +77,12 @@ export default function Home() {
                         &pound;{album.priceWav.toFixed(2)} WAV
                       </span>
                     </div>
-                    <button className="bg-accent text-background text-xs font-semibold px-4 py-2 rounded-full hover:bg-accent/80 transition-colors">
-                      Buy Album
-                    </button>
+                    <BuyButton
+                      albumId={album._id}
+                      priceMp3={album.priceMp3}
+                      priceWav={album.priceWav}
+                      variant="primary"
+                    />
                   </div>
                 </div>
               </div>
@@ -163,9 +167,11 @@ export default function Home() {
                 <span className="text-accent font-semibold text-sm">
                   &pound;{track.priceMp3.toFixed(2)}
                 </span>
-                <button className="bg-accent/10 text-accent text-xs font-semibold px-4 py-2 rounded-full hover:bg-accent hover:text-background transition-colors">
-                  Buy
-                </button>
+                <BuyButton
+                  trackId={track._id}
+                  priceMp3={track.priceMp3}
+                  priceWav={track.priceWav}
+                />
               </div>
             ))
           )}
