@@ -37,7 +37,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <nav className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-            <a href="/" className="frost-text text-xl font-bold tracking-wider uppercase">
+            <a href="/" className="frost-logo text-xl font-bold tracking-wider uppercase">
               Frost Levelz
             </a>
             <div className="flex items-center gap-6 text-sm">

@@ -54,6 +54,49 @@ h1, h2, h3 {
   position: relative;
 }
 
+/* Logo animation: shimmer sweep + breathing glow */
+.frost-logo {
+  font-family: var(--font-display), sans-serif;
+  background: linear-gradient(
+    90deg,
+    #89CFF0 0%,
+    #b8e4ff 15%,
+    #ffffff 30%,
+    #b8e4ff 45%,
+    #89CFF0 60%,
+    #5ba3d9 100%
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation:
+    frost-logo-shimmer 6s ease-in-out infinite,
+    frost-logo-glow 3s ease-in-out infinite;
+  position: relative;
+}
+
+@keyframes frost-logo-shimmer {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes frost-logo-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 6px rgba(137, 207, 240, 0.3))
+      drop-shadow(0 0 12px rgba(137, 207, 240, 0.1));
+  }
+  50% {
+    filter: drop-shadow(0 0 10px rgba(137, 207, 240, 0.6))
+      drop-shadow(0 0 25px rgba(137, 207, 240, 0.3))
+      drop-shadow(0 0 40px rgba(137, 207, 240, 0.1));
+  }
+}
+
 /* Shimmer animation for hero title */
 .frost-text-shimmer {
   font-family: var(--font-display), sans-serif;

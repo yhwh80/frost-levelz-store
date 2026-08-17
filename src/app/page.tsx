@@ -6,6 +6,7 @@ import { api } from "../../convex/_generated/api";
 import IceParticles from "./IceParticles";
 import AudioPlayer from "./AudioPlayer";
 import BuyButton from "./BuyButton";
+import ScrollReveal, { StaggerContainer, StaggerItem } from "./ScrollReveal";
 
 export default function Home() {
   const tracks = useQuery(api.tracks.list);
@@ -22,32 +23,40 @@ export default function Home() {
       <section className="relative flex flex-col items-center justify-center text-center px-4 py-32 sm:py-40 overflow-hidden">
         <IceParticles />
         <div className="absolute inset-0 bg-gradient-to-b from-accent/5 to-transparent pointer-events-none" />
-        <h1 className="frost-text-shimmer text-5xl sm:text-7xl font-bold tracking-wider uppercase mb-4 relative z-10">
-          Frost Levelz
-        </h1>
-        <p className="text-lg text-foreground/60 max-w-md mb-8 relative z-10">
-          Hip-Hop &amp; Rap straight from Brixton, London. Buy music directly from the artist.
-        </p>
-        <a
-          href="#music"
-          className="bg-accent text-background font-semibold px-8 py-3 rounded-full hover:bg-accent/80 transition-colors relative z-10 frost-btn"
-        >
-          Browse Music
-        </a>
+        <ScrollReveal>
+          <h1 className="frost-text-shimmer text-5xl sm:text-7xl font-bold tracking-wider uppercase mb-4 relative z-10">
+            Frost Levelz
+          </h1>
+        </ScrollReveal>
+        <ScrollReveal delay={0.2}>
+          <p className="text-lg text-foreground/60 max-w-md mb-8 relative z-10">
+            Hip-Hop &amp; Rap straight from Brixton, London. Buy music directly from the artist.
+          </p>
+        </ScrollReveal>
+        <ScrollReveal delay={0.4}>
+          <a
+            href="#music"
+            className="bg-accent text-background font-semibold px-8 py-3 rounded-full hover:bg-accent/80 transition-colors relative z-10 frost-btn"
+          >
+            Browse Music
+          </a>
+        </ScrollReveal>
       </section>
 
       {/* Albums Section */}
       <section id="music" className="max-w-6xl mx-auto w-full px-4 sm:px-6 py-16">
-        <h2 className="frost-heading text-2xl font-bold mb-8 uppercase tracking-wide">Albums</h2>
+        <ScrollReveal>
+          <h2 className="frost-heading text-2xl font-bold mb-8 uppercase tracking-wide">Albums</h2>
+        </ScrollReveal>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {albums === undefined ? (
             <div className="text-foreground/30 text-sm">Loading...</div>
           ) : albums.length === 0 ? (
             <div className="text-foreground/30 text-sm">No albums yet</div>
           ) : (
-            albums.map((album) => (
+            albums.map((album, i) => (
+              <ScrollReveal key={album._id} delay={i * 0.15}>
               <div
-                key={album._id}
                 className="bg-surface rounded-xl overflow-hidden border border-border hover:border-accent/40 transition-colors group"
               >
                 <div className="aspect-square bg-surface-light flex items-center justify-center overflow-hidden">
@@ -86,6 +95,7 @@ export default function Home() {
                   </div>
                 </div>
               </div>
+              </ScrollReveal>
             ))
           )}
         </div>
@@ -130,16 +140,18 @@ export default function Home() {
 
       {/* Singles Section */}
       <section className="max-w-6xl mx-auto w-full px-4 sm:px-6 py-16">
-        <h2 className="frost-heading text-2xl font-bold mb-8 uppercase tracking-wide">Singles</h2>
-        <div className="flex flex-col gap-2">
+        <ScrollReveal>
+          <h2 className="frost-heading text-2xl font-bold mb-8 uppercase tracking-wide">Singles</h2>
+        </ScrollReveal>
+        <StaggerContainer className="flex flex-col gap-2">
           {tracks === undefined ? (
             <div className="text-foreground/30 text-sm">Loading...</div>
           ) : singles.length === 0 ? (
             <div className="text-foreground/30 text-sm">No singles yet</div>
           ) : (
             singles.map((track, i) => (
+              <StaggerItem key={track._id}>
               <div
-                key={track._id}
                 className="flex items-center gap-4 bg-surface rounded-lg px-4 py-3 border border-border hover:border-accent/40 transition-colors group"
               >
                 <span className="text-foreground/30 text-sm w-6 text-right">
@@ -173,14 +185,18 @@ export default function Home() {
                   priceWav={track.priceWav}
                 />
               </div>
+              </StaggerItem>
             ))
           )}
-        </div>
+        </StaggerContainer>
       </section>
 
       {/* About Section */}
       <section id="about" className="max-w-6xl mx-auto w-full px-4 sm:px-6 py-16">
-        <h2 className="frost-heading text-2xl font-bold mb-8 uppercase tracking-wide">About</h2>
+        <ScrollReveal>
+          <h2 className="frost-heading text-2xl font-bold mb-8 uppercase tracking-wide">About</h2>
+        </ScrollReveal>
+        <ScrollReveal delay={0.15}>
         <div className="bg-surface rounded-xl border border-border p-6 sm:p-8">
           <p className="text-foreground/70 leading-relaxed">
             Frost Levelz is a hip-hop and rap artist from Brixton, London. With early musical
@@ -190,11 +206,15 @@ export default function Home() {
             source.
           </p>
         </div>
+        </ScrollReveal>
       </section>
 
       {/* Socials Section */}
       <section className="max-w-6xl mx-auto w-full px-4 sm:px-6 py-16">
-        <h2 className="frost-heading text-2xl font-bold mb-8 uppercase tracking-wide">Follow</h2>
+        <ScrollReveal>
+          <h2 className="frost-heading text-2xl font-bold mb-8 uppercase tracking-wide">Follow</h2>
+        </ScrollReveal>
+        <ScrollReveal delay={0.15}>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <a
             href="https://www.instagram.com/frostlevelz_daartist/"
@@ -233,11 +253,15 @@ export default function Home() {
             <span className="text-sm text-foreground/70 group-hover:text-foreground transition-colors">Facebook</span>
           </a>
         </div>
+        </ScrollReveal>
       </section>
 
       {/* Contact Section */}
       <section id="contact" className="max-w-6xl mx-auto w-full px-4 sm:px-6 py-16">
-        <h2 className="frost-heading text-2xl font-bold mb-8 uppercase tracking-wide">Contact</h2>
+        <ScrollReveal>
+          <h2 className="frost-heading text-2xl font-bold mb-8 uppercase tracking-wide">Contact</h2>
+        </ScrollReveal>
+        <ScrollReveal delay={0.15}>
         <div className="bg-surface rounded-xl border border-border p-6 sm:p-8 text-center">
           <p className="text-foreground/70 mb-4">
             For bookings, licensing, and enquiries:
@@ -249,6 +273,7 @@ export default function Home() {
             Frostlevelmanagement@gmail.com
           </a>
         </div>
+        </ScrollReveal>
       </section>
     </div>
   );
