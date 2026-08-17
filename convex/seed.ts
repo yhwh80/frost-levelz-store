@@ -7,18 +7,50 @@ export const seedCatalog = mutation({
     const existing = await ctx.db.query("tracks").first();
     if (existing) return "Already seeded";
 
-    // === ALBUM ===
+    // === ALBUM: GHOST-WRITER (15 tracks) ===
     const albumId = await ctx.db.insert("albums", {
       title: "GHOST-WRITER (feat. Frost A.I)",
       year: "2025",
-      trackCount: 12,
+      trackCount: 15,
       priceMp3: 7.99,
       priceWav: 11.99,
       coverImageUrl: "/covers/ghost-writer.jpg",
       description:
-        "F.L.I Group presents Ghost-Writer — Frost Levelz ft Frost A.I. Written & composed by Frost Level Investment Group.",
+        "F.L.I Group presents Ghost-Writer — Frost Levelz ft Frost A.I. Written & composed by Frost Level Investment Group. Released November 19, 2025.",
       released: true,
     });
+
+    // Ghost-Writer album tracks
+    const albumTracks = [
+      { title: "On My Grind (feat. Frost A.i)", trackNumber: 1 },
+      { title: "Lookin For A Gangsta (feat. Frost A.i) [Rap Mix]", trackNumber: 2 },
+      { title: "Take My Time (feat. Frost A.i) [Pop Mix]", trackNumber: 3 },
+      { title: "Chase Ecstasy (feat. Frost A.i)", trackNumber: 4 },
+      { title: "Phoney's (feat. Frost A.i) [Urban Mix]", trackNumber: 5 },
+      { title: "On The Other Side (feat. Frost A.i)", trackNumber: 6 },
+      { title: "Take Me Away (feat. Frost A.i)", trackNumber: 7 },
+      { title: "I Been Searching (feat. Frost A.i) [RnB Mix]", trackNumber: 8 },
+      { title: "Friend To Me (feat. Frost A.i) [Soul Mix]", trackNumber: 9 },
+      { title: "Something Special (feat. Frost A.i) [Soul Mix]", trackNumber: 10 },
+      { title: "Cussin Cussin (feat. Frost A.i)", trackNumber: 11 },
+      { title: "Is It My Fault (feat. Frost A.i)", trackNumber: 12 },
+      { title: "Gettin It (feat. Frost A.i) [Hip Hop Mix]", trackNumber: 13 },
+      { title: "Try Slow Us Down (feat. Frost A.i)", trackNumber: 14 },
+      { title: "Something Special (feat. Frost A.i) [House Mix]", trackNumber: 15 },
+    ];
+
+    for (const track of albumTracks) {
+      await ctx.db.insert("tracks", {
+        title: track.title,
+        year: "2025",
+        priceMp3: 1.29,
+        priceWav: 1.99,
+        albumId,
+        trackNumber: track.trackNumber,
+        coverImageUrl: "/covers/ghost-writer.jpg",
+        released: true,
+      });
+    }
 
     // === SINGLES ===
     const singles = [
@@ -26,6 +58,11 @@ export const seedCatalog = mutation({
         title: "London Town (feat. Antraxx Da Outlaw)",
         year: "2026",
         coverImageUrl: "/covers/london-town.jpg",
+      },
+      {
+        title: "Where R U Now?! (feat. Ayve)",
+        year: "2025",
+        coverImageUrl: "/covers/where-r-u-now.png",
       },
       {
         title: "See Me Ballin",
@@ -41,6 +78,11 @@ export const seedCatalog = mutation({
         title: "Feelin A Way",
         year: "2025",
         coverImageUrl: "/covers/feelin-a-way.jpg",
+      },
+      {
+        title: "Doubt Me (Styler Rhymes)",
+        year: "2025",
+        coverImageUrl: "/covers/doubt-me.png",
       },
       {
         title: "I Get It",
@@ -63,12 +105,12 @@ export const seedCatalog = mutation({
         coverImageUrl: "/covers/you-got-it.jpg",
       },
       {
-        title: "Lady You Got It!! (feat. Ayve)",
+        title: "Sexy Something Special [Soul Mix]",
         year: "2024",
-        coverImageUrl: "/covers/lady-you-got-it.jpg",
+        coverImageUrl: "/covers/sexy-something-special.jpg",
       },
       {
-        title: "Sexy Something Special",
+        title: "Sexy Something Special [House Mix]",
         year: "2024",
         coverImageUrl: "/covers/sexy-something-special.jpg",
       },
@@ -76,6 +118,11 @@ export const seedCatalog = mutation({
         title: "Shalom (feat. Deeavelidon)",
         year: "2024",
         coverImageUrl: "/covers/shalom.jpg",
+      },
+      {
+        title: "Late Changes (feat. Deeavelidon)",
+        year: "2024",
+        coverImageUrl: "/covers/late-changes.png",
       },
       {
         title: "Streetz Keep Callin",
@@ -103,9 +150,24 @@ export const seedCatalog = mutation({
         coverImageUrl: "/covers/i-didnt-mean-it.jpg",
       },
       {
+        title: "They Wasn't With Us",
+        year: "2023",
+        coverImageUrl: "/covers/they-wasnt-with-us.png",
+      },
+      {
+        title: "Still Freestyle",
+        year: "2023",
+        coverImageUrl: "/covers/still.png",
+      },
+      {
         title: "No #uckz Given",
         year: "2022",
         coverImageUrl: "/covers/no-fuckz-given.jpg",
+      },
+      {
+        title: "No #uckz Given [Clean]",
+        year: "2022",
+        coverImageUrl: "/covers/no-fuckz-given-clean.png",
       },
       {
         title: "Born In Da Streetz",
@@ -122,6 +184,11 @@ export const seedCatalog = mutation({
         year: "2025",
         coverImageUrl: "/covers/mum-smile.jpg",
       },
+      {
+        title: "Lookin For A Gangsta [Kev Mix]",
+        year: "2024",
+        coverImageUrl: "/covers/lookin-4-a-gangsta.png",
+      },
     ];
 
     for (const single of singles) {
@@ -135,7 +202,7 @@ export const seedCatalog = mutation({
       });
     }
 
-    return `Seeded with 1 album and ${singles.length} singles`;
+    return `Seeded with 1 album (${albumTracks.length} tracks) and ${singles.length} singles`;
   },
 });
 
