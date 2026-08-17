@@ -1,12 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import IceParticles from "./IceParticles";
+import AudioPlayer from "./AudioPlayer";
 
 export default function Home() {
   const tracks = useQuery(api.tracks.list);
   const albums = useQuery(api.albums.list);
+  const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
+
+  // Split tracks into album tracks and singles
+  const singles = tracks?.filter((t) => !t.albumId) ?? [];
+  const albumTracks = tracks?.filter((t) => t.albumId) ?? [];
 
   return (
     <div className="flex flex-col">
@@ -78,6 +85,43 @@ export default function Home() {
             ))
           )}
         </div>
+
+        {/* Album Tracklist */}
+        {albumTracks.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-foreground/50 text-sm font-semibold uppercase tracking-wide mb-3">
+              Tracklist
+            </h3>
+            <div className="flex flex-col gap-1">
+              {albumTracks
+                .sort((a, b) => (a.trackNumber ?? 0) - (b.trackNumber ?? 0))
+                .map((track) => (
+                  <div
+                    key={track._id}
+                    className="flex items-center gap-3 bg-surface/50 rounded-lg px-4 py-2.5 border border-border/50 hover:border-accent/30 transition-colors"
+                  >
+                    <span className="text-foreground/25 text-xs w-5 text-right font-mono">
+                      {track.trackNumber}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-sm truncate">{track.title}</h4>
+                    </div>
+                    {track.previewUrl && (
+                      <AudioPlayer
+                        src={track.previewUrl}
+                        trackId={track._id}
+                        currentlyPlaying={currentlyPlaying}
+                        onPlay={setCurrentlyPlaying}
+                      />
+                    )}
+                    <span className="text-accent/70 text-xs font-mono">
+                      &pound;{track.priceMp3.toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Singles Section */}
@@ -86,10 +130,10 @@ export default function Home() {
         <div className="flex flex-col gap-2">
           {tracks === undefined ? (
             <div className="text-foreground/30 text-sm">Loading...</div>
-          ) : tracks.length === 0 ? (
+          ) : singles.length === 0 ? (
             <div className="text-foreground/30 text-sm">No singles yet</div>
           ) : (
-            tracks.map((track, i) => (
+            singles.map((track, i) => (
               <div
                 key={track._id}
                 className="flex items-center gap-4 bg-surface rounded-lg px-4 py-3 border border-border hover:border-accent/40 transition-colors group"
@@ -109,9 +153,12 @@ export default function Home() {
                   <p className="text-foreground/40 text-xs">{track.year}</p>
                 </div>
                 {track.previewUrl && (
-                  <audio controls preload="none" className="h-8 w-32 hidden sm:block">
-                    <source src={track.previewUrl} type="audio/mpeg" />
-                  </audio>
+                  <AudioPlayer
+                    src={track.previewUrl}
+                    trackId={track._id}
+                    currentlyPlaying={currentlyPlaying}
+                    onPlay={setCurrentlyPlaying}
+                  />
                 )}
                 <span className="text-accent font-semibold text-sm">
                   &pound;{track.priceMp3.toFixed(2)}

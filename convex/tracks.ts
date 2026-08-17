@@ -17,7 +17,7 @@ export const list = query({
           : track.coverImageUrl ?? null,
         previewUrl: track.previewFileId
           ? await ctx.storage.getUrl(track.previewFileId)
-          : null,
+          : track.previewUrl ?? null,
       }))
     );
   },

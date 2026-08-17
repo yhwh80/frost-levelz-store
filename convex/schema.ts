@@ -23,6 +23,7 @@ export default defineSchema({
     trackNumber: v.optional(v.number()),
     durationSeconds: v.optional(v.number()),
     previewFileId: v.optional(v.id("_storage")),
+    previewUrl: v.optional(v.string()),
     mp3FileId: v.optional(v.id("_storage")),
     wavFileId: v.optional(v.id("_storage")),
     coverImageId: v.optional(v.id("_storage")),
