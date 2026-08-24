@@ -32,8 +32,7 @@ function DownloadSection({ sessionId }: { sessionId: string }) {
     return (
       <div className="mt-4">
         <a
-          href={download.url}
-          download={`${download.title}.${download.format}`}
+          href={`/api/download?session_id=${sessionId}`}
           className="inline-flex items-center gap-2 bg-accent text-background font-semibold px-8 py-3 rounded-full hover:bg-accent/80 transition-colors frost-btn"
         >
           <svg
