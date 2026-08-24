@@ -124,8 +124,7 @@ export const handleWebhook = action({
         format,
         email,
         amountPaid,
-        stripePaymentId:
-          (session.payment_intent as string) ?? session.id,
+        stripePaymentId: session.id,
       });
     }
 
