@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation } from "convex/react";
+import { useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 
@@ -22,23 +22,18 @@ export default function BuyButton({
 }: BuyButtonProps) {
   const [showFormats, setShowFormats] = useState(false);
   const [loading, setLoading] = useState(false);
+  const createCheckout = useAction(api.stripe.createCheckoutSession);
 
   const handleBuy = async (format: "mp3" | "wav") => {
     setLoading(true);
     try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trackId, albumId, format }),
-      });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert(data.error ?? "Something went wrong");
+      const url = await createCheckout({ trackId, albumId, format });
+      if (url) {
+        window.location.href = url;
       }
-    } catch {
-      alert("Something went wrong. Please try again.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      alert(message);
     } finally {
       setLoading(false);
       setShowFormats(false);
