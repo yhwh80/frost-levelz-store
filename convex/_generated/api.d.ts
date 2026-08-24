@@ -11,6 +11,7 @@
 import type * as albums from "../albums.js";
 import type * as purchases from "../purchases.js";
 import type * as seed from "../seed.js";
+import type * as stripe from "../stripe.js";
 import type * as tracks from "../tracks.js";
 
 import type {
@@ -23,6 +24,7 @@ declare const fullApi: ApiFromModules<{
   albums: typeof albums;
   purchases: typeof purchases;
   seed: typeof seed;
+  stripe: typeof stripe;
   tracks: typeof tracks;
 }>;
 
