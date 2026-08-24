@@ -3,34 +3,57 @@
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { Suspense } from "react";
+import { Suspense, useEffect, useRef } from "react";
 
 function DownloadSection({ sessionId }: { sessionId: string }) {
   const download = useQuery(api.files.getDownloadBySession, {
     stripeSessionId: sessionId,
   });
+  const hasAutoDownloaded = useRef(false);
 
+  // Auto-start download when it becomes available
+  useEffect(() => {
+    if (download && "url" in download && download.url && !hasAutoDownloaded.current) {
+      hasAutoDownloaded.current = true;
+      // Small delay so user sees the page first
+      setTimeout(() => {
+        window.location.href = `/api/download?session_id=${sessionId}`;
+      }, 1500);
+    }
+  }, [download, sessionId]);
+
+  // Still loading from Convex
   if (download === undefined) {
     return (
-      <div className="text-foreground/40 text-sm animate-pulse">
-        Preparing your download...
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+        <p className="text-foreground/40 text-sm">Preparing your download...</p>
       </div>
     );
   }
 
+  // Purchase not found yet — webhook may still be processing
   if (!download) {
     return (
-      <p className="text-foreground/50 text-sm">
-        Your download will be available shortly. If it doesn&apos;t appear,
-        please contact us at Frostlevelmanagement@gmail.com with your
-        reference number.
-      </p>
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+        <p className="text-foreground/50 text-sm">
+          Processing your payment...
+        </p>
+        <p className="text-foreground/30 text-xs">
+          Your download will appear automatically. This usually takes a few seconds.
+        </p>
+      </div>
     );
   }
 
+  // Single track download
   if ("url" in download && download.url) {
     return (
-      <div className="mt-4">
+      <div className="flex flex-col items-center gap-3 mt-4">
+        <p className="text-foreground/50 text-sm">
+          Your download is starting automatically...
+        </p>
         <a
           href={`/api/download?session_id=${sessionId}`}
           className="inline-flex items-center gap-2 bg-accent text-background font-semibold px-8 py-3 rounded-full hover:bg-accent/80 transition-colors frost-btn"
@@ -50,14 +73,26 @@ function DownloadSection({ sessionId }: { sessionId: string }) {
           </svg>
           Download {download.title} ({download.format.toUpperCase()})
         </a>
+        <p className="text-foreground/30 text-xs mt-2">
+          If the download didn&apos;t start, click the button above.
+        </p>
       </div>
     );
   }
 
+  // Album download (multiple tracks)
   if ("tracks" in download) {
-    const trackList = download.tracks as Array<{ url: string | null; title: string; trackNumber?: number; format: string }>;
+    const trackList = download.tracks as Array<{
+      url: string | null;
+      title: string;
+      trackNumber?: number;
+      format: string;
+    }>;
     return (
       <div className="mt-4 flex flex-col gap-2 w-full max-w-md">
+        <p className="text-foreground/50 text-sm mb-2">
+          Your album is ready — download each track below:
+        </p>
         {trackList.map((track, i: number) =>
           track?.url ? (
             <a
@@ -98,7 +133,7 @@ function SuccessContent() {
   const sessionId = searchParams.get("session_id");
 
   return (
-    <div className="min-h-[60vh] flex items-center justify-center px-4">
+    <div className="min-h-[60vh] flex items-center justify-center px-4 py-16">
       <div className="bg-surface rounded-xl border border-border p-8 sm:p-12 text-center max-w-lg w-full">
         <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-accent/15 flex items-center justify-center">
           <svg
@@ -122,7 +157,14 @@ function SuccessContent() {
           Thank you for supporting Frost Levelz!
         </p>
 
-        {sessionId && <DownloadSection sessionId={sessionId} />}
+        {sessionId ? (
+          <DownloadSection sessionId={sessionId} />
+        ) : (
+          <p className="text-foreground/50 text-sm">
+            Something went wrong with the redirect. Please contact
+            Frostlevelmanagement@gmail.com for help.
+          </p>
+        )}
 
         {sessionId && (
           <p className="text-foreground/30 text-xs font-mono mt-6 break-all">
