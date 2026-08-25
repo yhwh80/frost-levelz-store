@@ -8,17 +8,18 @@ import type { Id } from "../../convex/_generated/dataModel";
 interface BuyButtonProps {
   trackId?: Id<"tracks">;
   albumId?: Id<"albums">;
-  priceMp3: number;
   variant?: "primary" | "ghost";
 }
 
+// The price is shown next to this button at every call site, so the label
+// stays just "Buy" to avoid printing it twice.
+//
 // WAV is hidden for now: only one track in the catalogue has a WAV master, so
 // offering it took money for files we couldn't deliver. Restore the format
 // picker once the masters are uploaded.
 export default function BuyButton({
   trackId,
   albumId,
-  priceMp3,
   variant = "ghost",
 }: BuyButtonProps) {
   const [loading, setLoading] = useState(false);
@@ -50,7 +51,7 @@ export default function BuyButton({
   return (
     <div className="flex flex-col items-end gap-1">
       <button onClick={handleBuy} disabled={loading} className={`${baseClass} disabled:opacity-50`}>
-        {loading ? "..." : `Buy £${priceMp3.toFixed(2)}`}
+        {loading ? "..." : "Buy"}
       </button>
       {error && (
         <span className="text-[10px] text-red-400/80">{error}</span>

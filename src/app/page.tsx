@@ -83,11 +83,7 @@ export default function Home() {
                         &pound;{album.priceMp3.toFixed(2)} MP3
                       </span>
                     </div>
-                    <BuyButton
-                      albumId={album._id}
-                      priceMp3={album.priceMp3}
-                      variant="primary"
-                    />
+                    <BuyButton albumId={album._id} variant="primary" />
                   </div>
                 </div>
               </div>
@@ -176,10 +172,7 @@ export default function Home() {
                 <span className="text-accent font-semibold text-xs sm:text-sm flex-shrink-0">
                   &pound;{track.priceMp3.toFixed(2)}
                 </span>
-                <BuyButton
-                  trackId={track._id}
-                  priceMp3={track.priceMp3}
-                />
+                <BuyButton trackId={track._id} />
               </div>
               </div>
             ))
