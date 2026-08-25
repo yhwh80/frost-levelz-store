@@ -39,6 +39,8 @@ export default defineSchema({
     amountPaid: v.number(),
     stripePaymentId: v.string(),
     purchasedAt: v.number(),
+    downloadCount: v.optional(v.number()),
+    expiresAt: v.optional(v.number()),
   }).index("by_email", ["email"])
     .index("by_stripe_payment", ["stripePaymentId"]),
 });

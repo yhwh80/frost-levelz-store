@@ -1,7 +1,7 @@
-import { query, mutation } from "./_generated/server";
+import { internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 
-export const create = mutation({
+export const create = internalMutation({
   args: {
     trackId: v.optional(v.id("tracks")),
     albumId: v.optional(v.id("albums")),
@@ -14,36 +14,18 @@ export const create = mutation({
     return await ctx.db.insert("purchases", {
       ...args,
       purchasedAt: Date.now(),
+      downloadCount: 0,
+      expiresAt: Date.now() + 72 * 60 * 60 * 1000, // 72 hours
     });
   },
 });
 
-export const getByEmail = query({
+export const getByEmail = internalQuery({
   args: { email: v.string() },
   handler: async (ctx, args) => {
     return await ctx.db
       .query("purchases")
       .withIndex("by_email", (q) => q.eq("email", args.email))
       .collect();
-  },
-});
-
-export const getDownloadUrl = query({
-  args: {
-    purchaseId: v.id("purchases"),
-  },
-  handler: async (ctx, args) => {
-    const purchase = await ctx.db.get(args.purchaseId);
-    if (!purchase) return null;
-
-    if (purchase.trackId) {
-      const track = await ctx.db.get(purchase.trackId);
-      if (!track) return null;
-      const fileId = purchase.format === "wav" ? track.wavFileId : track.mp3FileId;
-      if (!fileId) return null;
-      return await ctx.storage.getUrl(fileId);
-    }
-
-    return null;
   },
 });

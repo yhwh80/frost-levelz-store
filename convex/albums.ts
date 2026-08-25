@@ -1,4 +1,4 @@
-import { query, mutation } from "./_generated/server";
+import { query, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 
 export const list = query({
@@ -11,7 +11,14 @@ export const list = query({
 
     return Promise.all(
       albums.map(async (album) => ({
-        ...album,
+        _id: album._id,
+        title: album.title,
+        year: album.year,
+        trackCount: album.trackCount,
+        priceMp3: album.priceMp3,
+        priceWav: album.priceWav,
+        description: album.description,
+        released: album.released,
         coverImageUrl: album.coverImageId
           ? await ctx.storage.getUrl(album.coverImageId)
           : album.coverImageUrl ?? null,
@@ -26,7 +33,14 @@ export const getById = query({
     const album = await ctx.db.get(args.albumId);
     if (!album) return null;
     return {
-      ...album,
+      _id: album._id,
+      title: album.title,
+      year: album.year,
+      trackCount: album.trackCount,
+      priceMp3: album.priceMp3,
+      priceWav: album.priceWav,
+      description: album.description,
+      released: album.released,
       coverImageUrl: album.coverImageId
         ? await ctx.storage.getUrl(album.coverImageId)
         : album.coverImageUrl ?? null,
@@ -34,7 +48,7 @@ export const getById = query({
   },
 });
 
-export const create = mutation({
+export const create = internalMutation({
   args: {
     title: v.string(),
     year: v.string(),

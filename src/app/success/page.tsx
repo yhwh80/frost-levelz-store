@@ -47,6 +47,25 @@ function DownloadSection({ sessionId }: { sessionId: string }) {
     );
   }
 
+  // Check expiry/limits
+  if ("expired" in download) {
+    return (
+      <p className="text-foreground/50 text-sm">
+        This download link has expired. Please contact
+        Frostlevelmanagement@gmail.com for help.
+      </p>
+    );
+  }
+
+  if ("limitReached" in download) {
+    return (
+      <p className="text-foreground/50 text-sm">
+        Download limit reached (max 5). Please contact
+        Frostlevelmanagement@gmail.com for help.
+      </p>
+    );
+  }
+
   // Single track download
   if ("url" in download && download.url) {
     return (
@@ -167,8 +186,8 @@ function SuccessContent() {
         )}
 
         {sessionId && (
-          <p className="text-foreground/30 text-xs font-mono mt-6 break-all">
-            Ref: {sessionId}
+          <p className="text-foreground/30 text-xs font-mono mt-6">
+            Ref: {sessionId.slice(-8)}
           </p>
         )}
         <a

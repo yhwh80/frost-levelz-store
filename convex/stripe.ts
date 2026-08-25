@@ -3,6 +3,7 @@
 import { action } from "./_generated/server";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
+import { internal } from "./_generated/api";
 import Stripe from "stripe";
 
 export const createCheckoutSession = action({
@@ -118,7 +119,7 @@ export const handleWebhook = action({
         session.customer_details?.email ?? session.customer_email ?? "";
       const amountPaid = (session.amount_total ?? 0) / 100;
 
-      await ctx.runMutation(api.purchases.create, {
+      await ctx.runMutation(internal.purchases.create, {
         trackId: trackId ? (trackId as never) : undefined,
         albumId: albumId ? (albumId as never) : undefined,
         format,

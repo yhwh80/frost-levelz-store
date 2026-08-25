@@ -15,9 +15,26 @@ export async function GET(request: Request) {
     stripeSessionId: sessionId,
   });
 
-  if (!download || !("url" in download) || !download.url) {
+  if (!download) {
     return new Response("Download not found", { status: 404 });
   }
+
+  if ("expired" in download) {
+    return new Response("Download link has expired. Please contact Frostlevelmanagement@gmail.com for help.", { status: 410 });
+  }
+
+  if ("limitReached" in download) {
+    return new Response("Download limit reached (max 5). Please contact Frostlevelmanagement@gmail.com for help.", { status: 429 });
+  }
+
+  if (!("url" in download) || !download.url) {
+    return new Response("File not available", { status: 404 });
+  }
+
+  // Increment download count
+  await convex.mutation(api.files.incrementDownloadCount, {
+    stripeSessionId: sessionId,
+  });
 
   // Fetch the file from Convex storage
   const fileResponse = await fetch(download.url);
