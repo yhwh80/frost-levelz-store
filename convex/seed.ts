@@ -1,6 +1,9 @@
-import { mutation } from "./_generated/server";
+import { internalMutation } from "./_generated/server";
 
-export const seedCatalog = mutation({
+// Internal only. As public mutations these were callable by anyone on the
+// internet — clearCatalog would wipe the entire catalogue. Run them from the
+// CLI instead: npx convex run seed:seedCatalog
+export const seedCatalog = internalMutation({
   args: {},
   handler: async (ctx) => {
     // Check if already seeded
@@ -100,7 +103,7 @@ export const seedCatalog = mutation({
   },
 });
 
-export const clearCatalog = mutation({
+export const clearCatalog = internalMutation({
   args: {},
   handler: async (ctx) => {
     const tracks = await ctx.db.query("tracks").collect();
