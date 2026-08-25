@@ -78,11 +78,9 @@ export default function Home() {
                     {album.year} &middot; {album.trackCount} tracks
                   </p>
                   <div className="flex items-center justify-between mt-4">
-                    <div className="flex flex-col">
-                      <span className="text-accent font-bold">
-                        &pound;{album.priceMp3.toFixed(2)} MP3
-                      </span>
-                    </div>
+                    <span className="text-accent font-bold">
+                      &pound;{album.priceMp3.toFixed(2)}
+                    </span>
                     <BuyButton albumId={album._id} variant="primary" />
                   </div>
                 </div>
