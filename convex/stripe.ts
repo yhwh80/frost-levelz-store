@@ -44,6 +44,19 @@ export const createCheckoutSession = action({
       throw new Error("Must provide trackId or albumId");
     }
 
+    // Never take money for a format we can't actually deliver. This is the
+    // server-side backstop for the UI hiding unavailable formats.
+    const deliverable: boolean = await ctx.runQuery(internal.files.hasFormat, {
+      trackId: args.trackId,
+      albumId: args.albumId,
+      format: args.format,
+    });
+    if (!deliverable) {
+      throw new Error(
+        `${args.format.toUpperCase()} isn't available for "${name}" yet. Please try another format.`
+      );
+    }
+
     const siteUrl = process.env.SITE_URL ?? "https://frostlevelz.com";
 
     const images = coverImageUrl

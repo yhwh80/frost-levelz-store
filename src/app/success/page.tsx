@@ -6,14 +6,14 @@ import { api } from "../../../convex/_generated/api";
 import { Suspense, useEffect, useRef } from "react";
 
 function DownloadSection({ sessionId }: { sessionId: string }) {
-  const download = useQuery(api.files.getDownloadBySession, {
+  const download = useQuery(api.files.getPurchaseStatus, {
     stripeSessionId: sessionId,
   });
   const hasAutoDownloaded = useRef(false);
 
   // Auto-start download when it becomes available
   useEffect(() => {
-    if (download && "url" in download && download.url && !hasAutoDownloaded.current) {
+    if (download?.status === "ok" && !hasAutoDownloaded.current) {
       hasAutoDownloaded.current = true;
       // Small delay so user sees the page first
       setTimeout(() => {
@@ -48,7 +48,7 @@ function DownloadSection({ sessionId }: { sessionId: string }) {
   }
 
   // Check expiry/limits
-  if ("expired" in download) {
+  if (download.status === "expired") {
     return (
       <p className="text-foreground/50 text-sm">
         This download link has expired. Please contact
@@ -57,7 +57,7 @@ function DownloadSection({ sessionId }: { sessionId: string }) {
     );
   }
 
-  if ("limitReached" in download) {
+  if (download.status === "limit") {
     return (
       <p className="text-foreground/50 text-sm">
         Download limit reached (max 5). Please contact
@@ -66,85 +66,48 @@ function DownloadSection({ sessionId }: { sessionId: string }) {
     );
   }
 
-  // Single track download
-  if ("url" in download && download.url) {
-    return (
-      <div className="flex flex-col items-center gap-3 mt-4">
-        <p className="text-foreground/50 text-sm">
-          Your download is starting automatically...
-        </p>
-        <a
-          href={`/api/download?session_id=${sessionId}`}
-          className="inline-flex items-center gap-2 bg-accent text-background font-semibold px-8 py-3 rounded-full hover:bg-accent/80 transition-colors frost-btn"
+  // Both tracks and albums are served through /api/download — albums arrive as
+  // a single zip, so there is one button either way.
+  const isAlbum = download.kind === "album";
+
+  return (
+    <div className="flex flex-col items-center gap-3 mt-4">
+      <p className="text-foreground/50 text-sm">
+        Your download is starting automatically...
+      </p>
+      <a
+        href={`/api/download?session_id=${sessionId}`}
+        className="inline-flex items-center gap-2 bg-accent text-background font-semibold px-8 py-3 rounded-full hover:bg-accent/80 transition-colors frost-btn"
+      >
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
         >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-            />
-          </svg>
-          Download {download.title} ({download.format.toUpperCase()})
-        </a>
-        <p className="text-foreground/30 text-xs mt-2">
-          If the download didn&apos;t start, click the button above.
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+          />
+        </svg>
+        Download {download.title} ({download.format.toUpperCase()})
+        {isAlbum ? " — ZIP" : ""}
+      </a>
+      {isAlbum && (
+        <p className="text-foreground/40 text-xs">
+          {download.trackCount} tracks in one zip file.
         </p>
-      </div>
-    );
-  }
-
-  // Album download (multiple tracks)
-  if ("tracks" in download) {
-    const trackList = download.tracks as Array<{
-      url: string | null;
-      title: string;
-      trackNumber?: number;
-      format: string;
-    }>;
-    return (
-      <div className="mt-4 flex flex-col gap-2 w-full max-w-md">
-        <p className="text-foreground/50 text-sm mb-2">
-          Your album is ready — download each track below:
-        </p>
-        {trackList.map((track, i: number) =>
-          track?.url ? (
-            <a
-              key={i}
-              href={track.url}
-              download={`${track.trackNumber ?? i + 1}. ${track.title}.${track.format}`}
-              className="flex items-center gap-3 bg-surface rounded-lg px-4 py-3 border border-border hover:border-accent/40 transition-colors text-left"
-            >
-              <span className="text-foreground/30 text-xs w-4">
-                {track.trackNumber ?? i + 1}
-              </span>
-              <span className="flex-1 text-sm truncate">{track.title}</span>
-              <svg
-                className="w-4 h-4 text-accent flex-shrink-0"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                />
-              </svg>
-            </a>
-          ) : null
-        )}
-      </div>
-    );
-  }
-
-  return null;
+      )}
+      <p className="text-foreground/30 text-xs mt-2">
+        If the download didn&apos;t start, click the button above.
+      </p>
+      <p className="text-foreground/30 text-xs">
+        {download.downloadsRemaining} of 5 downloads remaining &middot; link valid for 72 hours
+      </p>
+    </div>
+  );
 }
 
 function SuccessContent() {

@@ -82,14 +82,10 @@ export default function Home() {
                       <span className="text-accent font-bold">
                         &pound;{album.priceMp3.toFixed(2)} MP3
                       </span>
-                      <span className="text-accent/70 text-xs">
-                        &pound;{album.priceWav.toFixed(2)} WAV
-                      </span>
                     </div>
                     <BuyButton
                       albumId={album._id}
                       priceMp3={album.priceMp3}
-                      priceWav={album.priceWav}
                       variant="primary"
                     />
                   </div>
@@ -183,7 +179,6 @@ export default function Home() {
                 <BuyButton
                   trackId={track._id}
                   priceMp3={track.priceMp3}
-                  priceWav={track.priceWav}
                 />
               </div>
               </div>

@@ -11,6 +11,16 @@ export const create = internalMutation({
     stripePaymentId: v.string(),
   },
   handler: async (ctx, args) => {
+    // Stripe retries webhooks, so the same session can arrive more than once.
+    // Without this the retry creates a duplicate purchase row.
+    const existing = await ctx.db
+      .query("purchases")
+      .withIndex("by_stripe_payment", (q) =>
+        q.eq("stripePaymentId", args.stripePaymentId)
+      )
+      .first();
+    if (existing) return existing._id;
+
     return await ctx.db.insert("purchases", {
       ...args,
       purchasedAt: Date.now(),

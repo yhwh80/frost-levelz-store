@@ -34,15 +34,25 @@ export const getById = query({
   args: { trackId: v.id("tracks") },
   handler: async (ctx, args) => {
     const track = await ctx.db.get(args.trackId);
-    if (!track) return null;
+    if (!track || !track.released) return null;
+    // Field-picked on purpose: spreading the doc leaked mp3FileId/wavFileId.
     return {
-      ...track,
+      _id: track._id,
+      title: track.title,
+      year: track.year,
+      priceMp3: track.priceMp3,
+      priceWav: track.priceWav,
+      albumId: track.albumId,
+      trackNumber: track.trackNumber,
+      released: track.released,
+      hasMp3: !!track.mp3FileId,
+      hasWav: !!track.wavFileId,
       coverImageUrl: track.coverImageId
         ? await ctx.storage.getUrl(track.coverImageId)
         : track.coverImageUrl ?? null,
       previewUrl: track.previewFileId
         ? await ctx.storage.getUrl(track.previewFileId)
-        : null,
+        : track.previewUrl ?? null,
     };
   },
 });

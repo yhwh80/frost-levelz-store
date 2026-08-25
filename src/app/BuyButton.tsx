@@ -9,34 +9,36 @@ interface BuyButtonProps {
   trackId?: Id<"tracks">;
   albumId?: Id<"albums">;
   priceMp3: number;
-  priceWav: number;
   variant?: "primary" | "ghost";
 }
 
+// WAV is hidden for now: only one track in the catalogue has a WAV master, so
+// offering it took money for files we couldn't deliver. Restore the format
+// picker once the masters are uploaded.
 export default function BuyButton({
   trackId,
   albumId,
   priceMp3,
-  priceWav,
   variant = "ghost",
 }: BuyButtonProps) {
-  const [showFormats, setShowFormats] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const createCheckout = useAction(api.stripe.createCheckoutSession);
 
-  const handleBuy = async (format: "mp3" | "wav") => {
+  const handleBuy = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const url = await createCheckout({ trackId, albumId, format });
+      const url = await createCheckout({ trackId, albumId, format: "mp3" });
       if (url) {
         window.location.href = url;
+      } else {
+        setError("Checkout unavailable");
       }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Something went wrong";
-      alert(message);
+    } catch {
+      setError("Couldn't start checkout");
     } finally {
       setLoading(false);
-      setShowFormats(false);
     }
   };
 
@@ -45,36 +47,14 @@ export default function BuyButton({
       ? "bg-accent text-background text-xs font-semibold px-4 py-2 rounded-full hover:bg-accent/80 transition-colors"
       : "bg-accent/10 text-accent text-xs font-semibold px-4 py-2 rounded-full hover:bg-accent hover:text-background transition-colors";
 
-  if (showFormats) {
-    return (
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => handleBuy("mp3")}
-          disabled={loading}
-          className="bg-accent text-background text-[10px] font-semibold px-3 py-1.5 rounded-full hover:bg-accent/80 transition-colors disabled:opacity-50"
-        >
-          {loading ? "..." : `MP3 £${priceMp3.toFixed(2)}`}
-        </button>
-        <button
-          onClick={() => handleBuy("wav")}
-          disabled={loading}
-          className="bg-accent/20 text-accent text-[10px] font-semibold px-3 py-1.5 rounded-full hover:bg-accent hover:text-background transition-colors disabled:opacity-50"
-        >
-          {loading ? "..." : `WAV £${priceWav.toFixed(2)}`}
-        </button>
-        <button
-          onClick={() => setShowFormats(false)}
-          className="text-foreground/30 hover:text-foreground/60 text-xs ml-1 transition-colors"
-        >
-          ✕
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <button onClick={() => setShowFormats(true)} className={baseClass}>
-      Buy
-    </button>
+    <div className="flex flex-col items-end gap-1">
+      <button onClick={handleBuy} disabled={loading} className={`${baseClass} disabled:opacity-50`}>
+        {loading ? "..." : `Buy £${priceMp3.toFixed(2)}`}
+      </button>
+      {error && (
+        <span className="text-[10px] text-red-400/80">{error}</span>
+      )}
+    </div>
   );
 }
