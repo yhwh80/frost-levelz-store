@@ -1,5 +1,12 @@
 import { ConvexHttpClient } from "convex/browser";
 import { Zip, ZipPassThrough } from "fflate";
+import { createHash } from "node:crypto";
+import { createReadStream, createWriteStream } from "node:fs";
+import { mkdir, readdir, rename, stat, unlink } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import { api } from "../../../../convex/_generated/api";
 
 export const runtime = "nodejs";
@@ -8,6 +15,13 @@ export const dynamic = "force-dynamic";
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 const SUPPORT_EMAIL = "Frostlevelmanagement@gmail.com";
+
+// Every buyer of the same album gets a byte-identical zip, so building it once
+// and serving it from local disk keeps ~101 MB per sale off the Convex
+// bandwidth allowance. Cache lives in the container's tmp dir: it is lost on
+// redeploy, which just means the next download rebuilds it.
+const CACHE_DIR =
+  process.env.ZIP_CACHE_DIR ?? path.join(os.tmpdir(), "frost-album-cache");
 
 type DownloadFile = {
   title: string;
@@ -40,6 +54,57 @@ function textResponse(body: string, status: number) {
   return new Response(body, {
     status,
     headers: { "Content-Type": "text/plain; charset=utf-8" },
+  });
+}
+
+/**
+ * Cache identity for a built album zip.
+ *
+ * The fingerprint hashes the exact set of file URLs, and a Convex storage URL
+ * embeds its storage id — so re-uploading or swapping any track produces a new
+ * fingerprint and therefore a new cache entry. That makes the cache
+ * self-invalidating; there is no manual purge to forget.
+ */
+function cacheIdentity(
+  cacheGroup: string,
+  format: string,
+  files: DownloadFile[]
+) {
+  const fingerprint = createHash("sha256")
+    .update(`${format}\n${files.map((f) => f.url).join("\n")}`)
+    .digest("hex")
+    .slice(0, 16);
+  const group = cacheGroup.replace(/[^a-zA-Z0-9]/g, "").slice(0, 40);
+  const prefix = `album-${group}-${format}-`;
+  return { prefix, filename: `${prefix}${fingerprint}.zip` };
+}
+
+/** Drop superseded builds for this album so the cache can't grow without bound. */
+async function pruneSuperseded(prefix: string, keep: string) {
+  try {
+    for (const name of await readdir(CACHE_DIR)) {
+      if (name.startsWith(prefix) && name !== keep) {
+        await unlink(path.join(CACHE_DIR, name)).catch(() => {});
+      }
+    }
+  } catch {
+    // Pruning is best-effort housekeeping; never fail a download over it.
+  }
+}
+
+function fileResponse(
+  filePath: string,
+  size: number,
+  downloadName: string
+): Response {
+  const nodeStream = createReadStream(filePath);
+  return new Response(Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>, {
+    headers: {
+      "Content-Type": "application/zip",
+      "Content-Disposition": `attachment; filename="${downloadName}"`,
+      "Content-Length": size.toString(),
+      "Cache-Control": "no-store",
+    },
   });
 }
 
@@ -148,7 +213,7 @@ export async function GET(request: Request) {
       );
   }
 
-  const { kind, title, format, files } = result;
+  const { kind, title, format, files, cacheGroup } = result;
 
   if (kind === "track") {
     const file = files[0];
@@ -174,8 +239,27 @@ export async function GET(request: Request) {
     return new Response(upstream.body, { headers });
   }
 
-  // Album: verify every file is reachable before consuming a download, so a
-  // dead link doesn't cost the customer one of their five.
+  // ---- Album ----
+  const { prefix, filename } = cacheIdentity(cacheGroup, format, files);
+  const cachePath = path.join(CACHE_DIR, filename);
+  const downloadName = `${sanitize(title)} (${format.toUpperCase()}).zip`;
+
+  // Cache hit: serve from local disk and touch Convex storage not at all.
+  try {
+    const cached = await stat(cachePath);
+    if (cached.isFile() && cached.size > 0) {
+      await convex.action(api.files.consumeDownload, {
+        secret,
+        stripeSessionId: sessionId,
+      });
+      return fileResponse(cachePath, cached.size, downloadName);
+    }
+  } catch {
+    // Not cached yet — fall through and build it.
+  }
+
+  // Verify every file is reachable before consuming a download, so a dead link
+  // doesn't cost the customer one of their five.
   for (const file of files) {
     const probe = await fetch(file.url, { method: "HEAD" });
     if (!probe.ok) {
@@ -191,10 +275,39 @@ export async function GET(request: Request) {
     stripeSessionId: sessionId,
   });
 
-  return new Response(zipStream(files, format), {
+  const built = zipStream(files, format);
+  let clientStream: ReadableStream<Uint8Array> = built;
+
+  // Split the stream: the buyer downloads progressively while the same bytes
+  // are written to disk for everyone after them. If anything about caching
+  // fails, the buyer still gets their music — the download never depends on it.
+  try {
+    await mkdir(CACHE_DIR, { recursive: true });
+    const [toBuyer, toDisk] = built.tee();
+    clientStream = toBuyer;
+
+    const tmpPath = `${cachePath}.${process.pid}.${Date.now()}.tmp`;
+    void (async () => {
+      try {
+        await pipeline(
+          Readable.fromWeb(toDisk as Parameters<typeof Readable.fromWeb>[0]),
+          createWriteStream(tmpPath)
+        );
+        // Rename is atomic, so a reader never sees a half-written zip.
+        await rename(tmpPath, cachePath);
+        await pruneSuperseded(prefix, filename);
+      } catch {
+        await unlink(tmpPath).catch(() => {});
+      }
+    })();
+  } catch {
+    // No writable cache dir; serve the freshly built zip and move on.
+  }
+
+  return new Response(clientStream, {
     headers: {
       "Content-Type": "application/zip",
-      "Content-Disposition": `attachment; filename="${sanitize(title)} (${format.toUpperCase()}).zip"`,
+      "Content-Disposition": `attachment; filename="${downloadName}"`,
       "Cache-Control": "no-store",
     },
   });

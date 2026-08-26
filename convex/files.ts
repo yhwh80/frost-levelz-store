@@ -47,6 +47,10 @@ export type DownloadResult =
       format: "mp3" | "wav";
       files: DownloadFile[];
       downloadsRemaining: number;
+      // Identifies the underlying product (album/track id) rather than the
+      // purchase, so the download route can cache one built zip per album and
+      // reuse it across every buyer.
+      cacheGroup: string;
     };
 
 /**
@@ -123,6 +127,7 @@ export const getDownloadFiles = internalQuery({
         format: purchase.format,
         files: [{ title: track.title, url }],
         downloadsRemaining,
+        cacheGroup: purchase.trackId,
       };
     }
 
@@ -153,6 +158,7 @@ export const getDownloadFiles = internalQuery({
         format: purchase.format,
         files,
         downloadsRemaining,
+        cacheGroup: purchase.albumId,
       };
     }
 
