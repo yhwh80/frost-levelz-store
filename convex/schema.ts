@@ -41,6 +41,29 @@ export default defineSchema({
     purchasedAt: v.number(),
     downloadCount: v.optional(v.number()),
     expiresAt: v.optional(v.number()),
+    // Set once the confirmation email has gone out, so a webhook retry can't
+    // email the same buyer twice.
+    emailSentAt: v.optional(v.number()),
   }).index("by_email", ["email"])
     .index("by_stripe_payment", ["stripePaymentId"]),
+
+  comments: defineTable({
+    name: v.string(),
+    body: v.string(),
+    createdAt: v.number(),
+    // "visible" shows on the site. "hidden" is set either by Frost deleting it
+    // or by the approval queue when that mode is switched on.
+    status: v.union(v.literal("visible"), v.literal("hidden")),
+    // Kept only for rate limiting and abuse handling, never displayed.
+    ipHash: v.optional(v.string()),
+  })
+    .index("by_status_time", ["status", "createdAt"])
+    .index("by_ip", ["ipHash", "createdAt"]),
+
+  // Single-row key/value settings so things can be switched at runtime without
+  // a redeploy — notably the comments kill switch and approval mode.
+  settings: defineTable({
+    key: v.string(),
+    value: v.union(v.string(), v.boolean(), v.number()),
+  }).index("by_key", ["key"]),
 });

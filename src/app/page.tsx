@@ -6,6 +6,7 @@ import { api } from "../../convex/_generated/api";
 import IceParticles from "./IceParticles";
 import AudioPlayer from "./AudioPlayer";
 import BuyButton from "./BuyButton";
+import Comments from "./Comments";
 import ScrollReveal, { StaggerContainer, StaggerItem } from "./ScrollReveal";
 
 export default function Home() {
@@ -263,6 +264,8 @@ export default function Home() {
         </div>
         </ScrollReveal>
       </section>
+
+      <Comments />
     </div>
   );
 }

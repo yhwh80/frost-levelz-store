@@ -140,6 +140,35 @@ export const handleWebhook = action({
         amountPaid,
         stripePaymentId: session.id,
       });
+
+      // Confirmation email. Deliberately after the purchase row exists, and
+      // wrapped so a mail failure can never fail the webhook — Stripe would
+      // retry it and we'd risk duplicate work over an email we can resend.
+      if (email) {
+        try {
+          const claim: { claimed: boolean; expiresAt?: number } =
+            await ctx.runMutation(internal.purchases.claimEmailSend, {
+              stripePaymentId: session.id,
+            });
+
+          if (claim.claimed) {
+            const title: string = await ctx.runQuery(
+              internal.purchases.describePurchase,
+              { stripePaymentId: session.id }
+            );
+            await ctx.runAction(internal.email.sendPurchaseConfirmation, {
+              to: email,
+              title,
+              format,
+              kind: albumId ? "album" : "track",
+              stripeSessionId: session.id,
+              expiresAt: claim.expiresAt,
+            });
+          }
+        } catch (err) {
+          console.error("Confirmation email failed:", err);
+        }
+      }
     }
 
     return "OK";
