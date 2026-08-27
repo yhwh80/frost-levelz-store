@@ -15,7 +15,7 @@ export const seedCatalog = internalMutation({
       title: "GHOST-WRITER (feat. Frost A.I)",
       year: "2025",
       trackCount: 15,
-      priceMp3: 7.99,
+      priceMp3: 5.99,
       priceWav: 11.99,
       coverImageUrl: "/covers/ghost-writer.jpg",
       description:
@@ -46,7 +46,7 @@ export const seedCatalog = internalMutation({
       await ctx.db.insert("tracks", {
         title: track.title,
         year: "2025",
-        priceMp3: 1.29,
+        priceMp3: 0.99,
         priceWav: 1.99,
         albumId,
         trackNumber: track.trackNumber,
@@ -91,7 +91,7 @@ export const seedCatalog = internalMutation({
       await ctx.db.insert("tracks", {
         title: single.title,
         year: single.year,
-        priceMp3: 1.29,
+        priceMp3: 0.99,
         priceWav: 1.99,
         coverImageUrl: single.coverImageUrl,
         previewUrl: single.previewUrl,

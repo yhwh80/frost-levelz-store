@@ -15,6 +15,55 @@ import type { Id } from "./_generated/dataModel";
  * Deletes are batched because a single mutation shouldn't do unbounded work;
  * keep calling until `remaining` is 0.
  */
+/**
+ * Update catalogue prices in place.
+ *
+ * Prices live in the database, not the code, so re-seeding is NOT a way to
+ * change them — clearCatalog deletes tracks and albums, which would orphan the
+ * trackId/albumId on every existing purchase and break those customers'
+ * downloads. Always patch in place.
+ *
+ *   npx convex run --prod maintenance:setPrices '{"trackMp3":0.99,"albumMp3":5.99,"dryRun":true}'
+ */
+export const setPrices = internalMutation({
+  args: {
+    trackMp3: v.optional(v.number()),
+    albumMp3: v.optional(v.number()),
+    dryRun: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const changes: string[] = [];
+
+    if (args.trackMp3 !== undefined) {
+      const tracks = await ctx.db.query("tracks").collect();
+      for (const track of tracks) {
+        if (track.priceMp3 === args.trackMp3) continue;
+        changes.push(`track "${track.title}": ${track.priceMp3} -> ${args.trackMp3}`);
+        if (!args.dryRun) {
+          await ctx.db.patch(track._id, { priceMp3: args.trackMp3 });
+        }
+      }
+    }
+
+    if (args.albumMp3 !== undefined) {
+      const albums = await ctx.db.query("albums").collect();
+      for (const album of albums) {
+        if (album.priceMp3 === args.albumMp3) continue;
+        changes.push(`album "${album.title}": ${album.priceMp3} -> ${args.albumMp3}`);
+        if (!args.dryRun) {
+          await ctx.db.patch(album._id, { priceMp3: args.albumMp3 });
+        }
+      }
+    }
+
+    return {
+      dryRun: args.dryRun,
+      changed: changes.length,
+      sample: changes.slice(0, 5),
+    };
+  },
+});
+
 export const pruneStorage = internalMutation({
   args: {
     // "orphans" = files no document references. "all" = every stored file,
