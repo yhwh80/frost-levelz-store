@@ -64,6 +64,55 @@ export const setPrices = internalMutation({
   },
 });
 
+/**
+ * Removes an account and everything attached to it — for genuine deletion
+ * requests under UK GDPR, and for clearing test accounts.
+ *
+ * Purchase records are deliberately left alone: tax rules require keeping
+ * sales records for six years, and the privacy policy says so.
+ */
+export const deleteAccount = internalMutation({
+  args: { email: v.string(), confirm: v.string() },
+  handler: async (ctx, args) => {
+    if (args.confirm !== "DELETE") {
+      throw new Error('Refusing to run: pass confirm:"DELETE"');
+    }
+    const email = args.email.trim().toLowerCase();
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .first();
+    if (!user) return "no such account";
+
+    let removed = 0;
+    for (const s of await ctx.db
+      .query("sessions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect()) {
+      await ctx.db.delete(s._id);
+      removed++;
+    }
+    for (const t of await ctx.db
+      .query("loginTokens")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .collect()) {
+      await ctx.db.delete(t._id);
+      removed++;
+    }
+    for (const sub of await ctx.db
+      .query("subscriptions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect()) {
+      await ctx.db.delete(sub._id);
+      removed++;
+    }
+    await ctx.db.delete(user._id);
+
+    return `deleted ${email} and ${removed} related records (purchase history retained for tax)`;
+  },
+});
+
 export const pruneStorage = internalMutation({
   args: {
     // "orphans" = files no document references. "all" = every stored file,
