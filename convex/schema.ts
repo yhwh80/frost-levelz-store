@@ -66,4 +66,51 @@ export default defineSchema({
     key: v.string(),
     value: v.union(v.string(), v.boolean(), v.number()),
   }).index("by_key", ["key"]),
+
+  // ---- Accounts (magic-link login, no passwords to store or leak) ----
+
+  users: defineTable({
+    email: v.string(),
+    createdAt: v.number(),
+    lastSeenAt: v.optional(v.number()),
+    stripeCustomerId: v.optional(v.string()),
+  })
+    .index("by_email", ["email"])
+    .index("by_stripe_customer", ["stripeCustomerId"]),
+
+  // Single-use login links. Only a hash of the token is stored, so a database
+  // leak can't be replayed into logins.
+  loginTokens: defineTable({
+    tokenHash: v.string(),
+    email: v.string(),
+    expiresAt: v.number(),
+    usedAt: v.optional(v.number()),
+  })
+    .index("by_hash", ["tokenHash"])
+    .index("by_email", ["email"]),
+
+  // Session cookies, also stored hashed.
+  sessions: defineTable({
+    tokenHash: v.string(),
+    userId: v.id("users"),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  })
+    .index("by_hash", ["tokenHash"])
+    .index("by_user", ["userId"]),
+
+  subscriptions: defineTable({
+    userId: v.id("users"),
+    stripeSubscriptionId: v.string(),
+    stripeCustomerId: v.string(),
+    // Mirrors Stripe: active/trialing grant access; past_due keeps access
+    // during retries; canceled/unpaid do not.
+    status: v.string(),
+    // Access runs to here even after cancelling — Stripe's period end.
+    currentPeriodEnd: v.number(),
+    cancelAtPeriodEnd: v.optional(v.boolean()),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_stripe_subscription", ["stripeSubscriptionId"]),
 });

@@ -130,6 +130,31 @@ Trouble downloading? Just reply to this email.
   },
 });
 
+/**
+ * Magic-link sign-in. Deliberately terse and free of marketing, because this
+ * is a security email and looking like one helps it stay out of spam.
+ */
+export const sendLoginLink = internalAction({
+  args: { to: v.string(), url: v.string() },
+  handler: async (ctx, args): Promise<boolean> => {
+    const inner = `
+<p style="margin:0 0 4px;font-size:15px;line-height:1.6;color:#c9c9d6;">Tap the button to sign in. No password needed.</p>
+${button(args.url, "Sign in")}
+<p style="margin:0;font-size:13px;line-height:1.6;color:#8a8a9c;">
+This link works once and expires in 15 minutes.
+</p>
+<p style="margin:16px 0 0;font-size:13px;line-height:1.6;color:#8a8a9c;">
+If you didn't ask to sign in, you can ignore this email — nobody can access your account without this link.
+</p>`;
+
+    return await send({
+      to: args.to,
+      subject: "Sign in to Frost Levelz",
+      html: shell("Sign in", inner),
+    });
+  },
+});
+
 /** Notifies Frost when a fan leaves a comment, so nothing sits unseen. */
 export const notifyNewComment = internalAction({
   args: { name: v.string(), body: v.string(), pending: v.boolean() },

@@ -9,6 +9,7 @@
  */
 
 import type * as albums from "../albums.js";
+import type * as auth from "../auth.js";
 import type * as comments from "../comments.js";
 import type * as email from "../email.js";
 import type * as files from "../files.js";
@@ -26,6 +27,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   albums: typeof albums;
+  auth: typeof auth;
   comments: typeof comments;
   email: typeof email;
   files: typeof files;
