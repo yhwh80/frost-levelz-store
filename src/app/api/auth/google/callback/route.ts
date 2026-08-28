@@ -14,7 +14,10 @@ const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 const SITE = process.env.SITE_URL ?? "https://frostlevelz.com";
 const STATE_COOKIE = "fl_oauth_state";
 
-function fail(reason: string) {
+function fail(reason: string, detail?: string) {
+  // Logged so the server tells us which step failed — several of these happen
+  // before Convex is called, so they leave no trace in the Convex logs.
+  console.error(`[google-auth] failed: ${reason}${detail ? ` — ${detail}` : ""}`);
   return Response.redirect(`${SITE}/account?error=${encodeURIComponent(reason)}`, 303);
 }
 
@@ -29,6 +32,7 @@ function readCookie(request: Request, name: string): string | undefined {
 }
 
 export async function GET(request: Request) {
+  console.error("[google-auth] callback reached");
   const secret = serverSecret();
   if (!secret) return fail("google_unavailable");
 
@@ -37,10 +41,12 @@ export async function GET(request: Request) {
   const state = url.searchParams.get("state");
   const expectedState = readCookie(request, STATE_COOKIE);
 
-  if (url.searchParams.get("error")) return fail("cancelled");
-  if (!code || !state) return fail("missing_code");
+  const googleError = url.searchParams.get("error");
+  if (googleError) return fail("cancelled", `google said: ${googleError}`);
+  if (!code || !state) return fail("missing_code", `code=${!!code} state=${!!state}`);
   // Reject if the state doesn't match the cookie this browser was given.
-  if (!expectedState || state !== expectedState) return fail("bad_state");
+  if (!expectedState || state !== expectedState)
+    return fail("bad_state", expectedState ? "state mismatch" : "state cookie missing");
 
   try {
     // The client secret never reaches this server — Convex does the exchange
@@ -51,7 +57,7 @@ export async function GET(request: Request) {
       redirectUri: `${SITE}/api/auth/google/callback`,
     });
     if (!exchanged.ok || !exchanged.email) {
-      return fail(exchanged.reason ?? "google_failed");
+      return fail(exchanged.reason ?? "google_failed", "convex exchange rejected");
     }
 
     const sessionToken = newToken();
