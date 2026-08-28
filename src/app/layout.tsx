@@ -61,6 +61,15 @@ export default function RootLayout({
         </ConvexClientProvider>
         <footer className="border-t border-border py-8 text-center text-sm text-foreground/40">
           <p>&copy; {new Date().getFullYear()} Frost Levelz. All rights reserved.</p>
+          <p className="mt-3 flex items-center justify-center gap-4 text-xs">
+            <a href="/privacy" className="hover:text-accent transition-colors">
+              Privacy Policy
+            </a>
+            <span className="text-foreground/20">&middot;</span>
+            <a href="/terms" className="hover:text-accent transition-colors">
+              Terms of Service
+            </a>
+          </p>
         </footer>
       </body>
     </html>

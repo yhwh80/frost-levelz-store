@@ -25,7 +25,7 @@ export const create = internalMutation({
       ...args,
       purchasedAt: Date.now(),
       downloadCount: 0,
-      expiresAt: Date.now() + 72 * 60 * 60 * 1000, // 72 hours
+      expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days
     });
   },
 });

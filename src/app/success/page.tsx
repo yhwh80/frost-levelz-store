@@ -104,7 +104,7 @@ function DownloadSection({ sessionId }: { sessionId: string }) {
         If the download didn&apos;t start, click the button above.
       </p>
       <p className="text-foreground/30 text-xs">
-        {download.downloadsRemaining} of 5 downloads remaining &middot; link valid for 72 hours
+        {download.downloadsRemaining} of 5 downloads remaining &middot; link valid for 30 days
       </p>
     </div>
   );
