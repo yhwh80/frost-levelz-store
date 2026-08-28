@@ -353,7 +353,16 @@ export const exchangeGoogleCode = action({
         grant_type: "authorization_code",
       }),
     });
-    if (!tokenRes.ok) return { ok: false, reason: "token_exchange_failed" };
+    if (!tokenRes.ok) {
+      // Google explains the refusal in the body — invalid_client means the
+      // id/secret pair is wrong, invalid_grant means the code or redirect_uri
+      // didn't match. Log it so we aren't guessing.
+      const body = await tokenRes.text();
+      console.error(
+        `[google-exchange] HTTP ${tokenRes.status}: ${body.slice(0, 300)}`
+      );
+      return { ok: false, reason: "token_exchange_failed" };
+    }
 
     const tokens = (await tokenRes.json()) as { access_token?: string };
     if (!tokens.access_token) return { ok: false, reason: "no_access_token" };
