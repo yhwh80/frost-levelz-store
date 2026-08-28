@@ -17,6 +17,7 @@ import type * as maintenance from "../maintenance.js";
 import type * as purchases from "../purchases.js";
 import type * as seed from "../seed.js";
 import type * as stripe from "../stripe.js";
+import type * as subscriptions from "../subscriptions.js";
 import type * as tracks from "../tracks.js";
 
 import type {
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   purchases: typeof purchases;
   seed: typeof seed;
   stripe: typeof stripe;
+  subscriptions: typeof subscriptions;
   tracks: typeof tracks;
 }>;
 

@@ -263,6 +263,34 @@ export const getPurchaseStatus = query({
 });
 
 /**
+ * Resolves a full-quality stream URL for a track — internal only, and the
+ * caller must have already confirmed an active subscription.
+ */
+export const getStreamSource = internalQuery({
+  args: { trackId: v.id("tracks") },
+  handler: async (ctx, args) => {
+    const track = await ctx.db.get(args.trackId);
+    if (!track || !track.released || !track.mp3FileId) return null;
+    const url = await ctx.storage.getUrl(track.mp3FileId);
+    if (!url) return null;
+    return { url, title: track.title };
+  },
+});
+
+export const streamForSubscriber = action({
+  args: { secret: v.string(), trackId: v.id("tracks") },
+  handler: async (
+    ctx,
+    args
+  ): Promise<{ url: string; title: string } | null> => {
+    requireServerSecret(args.secret);
+    return await ctx.runQuery(internal.files.getStreamSource, {
+      trackId: args.trackId,
+    });
+  },
+});
+
+/**
  * Guards checkout: we must never sell a format we can't actually deliver.
  */
 export const hasFormat = internalQuery({

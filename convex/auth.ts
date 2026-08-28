@@ -253,6 +253,61 @@ export const completeLogin = action({
   },
 });
 
+/**
+ * Creates a user + session directly from a verified identity provider.
+ * Only reachable with the server secret, and only ever called after the
+ * provider has confirmed the address belongs to the person signing in.
+ */
+export const createSessionForEmail = internalMutation({
+  args: { email: v.string(), sessionHash: v.string() },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const email = args.email.trim().toLowerCase();
+
+    const existing = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .first();
+
+    // Signing in with Google and with a magic link land on the same account
+    // when the address matches — one person, one account.
+    let userId: Id<"users">;
+    if (existing) {
+      userId = existing._id;
+      await ctx.db.patch(userId, { lastSeenAt: now });
+    } else {
+      userId = await ctx.db.insert("users", {
+        email,
+        createdAt: now,
+        lastSeenAt: now,
+      });
+    }
+
+    await ctx.db.insert("sessions", {
+      tokenHash: args.sessionHash,
+      userId,
+      createdAt: now,
+      expiresAt: now + SESSION_TTL_MS,
+    });
+
+    return { ok: true as const, email };
+  },
+});
+
+export const signInWithProvider = action({
+  args: { secret: v.string(), email: v.string(), sessionHash: v.string() },
+  handler: async (ctx, args): Promise<{ ok: boolean; email?: string }> => {
+    requireServerSecret(args.secret);
+    if (!looksLikeEmail(normaliseEmail(args.email))) {
+      return { ok: false };
+    }
+    return await ctx.runMutation(internal.auth.createSessionForEmail, {
+      email: normaliseEmail(args.email),
+      sessionHash: args.sessionHash,
+    });
+  },
+});
+
 export const endSession = action({
   args: { secret: v.string(), sessionHash: v.string() },
   handler: async (ctx, args): Promise<string> => {
