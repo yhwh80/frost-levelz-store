@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Orbitron } from "next/font/google";
 import ConvexClientProvider from "./ConvexClientProvider";
 import "./globals.css";
@@ -22,6 +22,23 @@ export const metadata: Metadata = {
   title: "Frost Levelz | Official Music Store",
   description:
     "Buy and download music directly from Frost Levelz. Hip-hop & rap straight from Brixton, London.",
+  // iOS ignores much of the web manifest, so the home-screen behaviour has to
+  // be declared with these Apple-specific tags as well.
+  appleWebApp: {
+    capable: true,
+    title: "Frost Levelz",
+    statusBarStyle: "black-translucent",
+  },
+  icons: {
+    icon: "/icons/icon-192.png",
+    apple: "/icons/icon-180.png",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0a0a0f",
+  // Lets the layout run under the notch on iPhones when installed.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
