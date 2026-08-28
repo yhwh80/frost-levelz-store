@@ -50,6 +50,9 @@ export default function RootLayout({
               <a href="#contact" className="text-foreground/70 hover:text-accent transition-colors">
                 Contact
               </a>
+              <a href="/account" className="text-accent hover:text-accent/70 transition-colors font-semibold">
+                Account
+              </a>
             </div>
           </div>
         </nav>

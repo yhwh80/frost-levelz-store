@@ -7,6 +7,8 @@ interface AudioPlayerProps {
   trackId: string;
   currentlyPlaying: string | null;
   onPlay: (trackId: string) => void;
+  /** Subscribers stream the full track; everyone else hears the preview clip. */
+  fullAccess?: boolean;
 }
 
 export default function AudioPlayer({
@@ -14,6 +16,7 @@ export default function AudioPlayer({
   trackId,
   currentlyPlaying,
   onPlay,
+  fullAccess = false,
 }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -35,9 +38,26 @@ export default function AudioPlayer({
     };
   }, []);
 
+  // The source is decided at play time, so upgrading to a subscription takes
+  // effect on the next press without a page reload.
+  const playbackSrc = fullAccess
+    ? `/api/stream?track=${encodeURIComponent(trackId)}`
+    : src;
+
+  // Drop any existing audio element when access changes, so a subscriber
+  // doesn't keep hearing the clip they loaded before subscribing.
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current = null;
+      setIsPlaying(false);
+    }
+  }, [fullAccess]);
+
   const togglePlay = useCallback(async () => {
     if (!audioRef.current) {
-      const audio = new Audio(src);
+      const audio = new Audio(playbackSrc);
       audio.onended = () => {
         setIsPlaying(false);
       };
@@ -64,13 +84,14 @@ export default function AudioPlayer({
       }
       setIsLoading(false);
     }
-  }, [isPlaying, onPlay, trackId, src]);
+  }, [isPlaying, onPlay, trackId, playbackSrc]);
 
   return (
     <button
       onClick={togglePlay}
+      title={fullAccess ? "Play full track" : "Preview \u2014 subscribe to hear it all"}
       className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full bg-accent/15 hover:bg-accent/30 text-accent transition-colors active:scale-95"
-      aria-label={isPlaying ? "Pause" : "Play preview"}
+      aria-label={isPlaying ? "Pause" : fullAccess ? "Play full track" : "Play preview"}
     >
       {isLoading ? (
         <svg className="w-4 h-4 animate-spin" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">

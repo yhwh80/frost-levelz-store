@@ -5,6 +5,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import IceParticles from "./IceParticles";
 import AudioPlayer from "./AudioPlayer";
+import { useAccount } from "./useAccount";
 import BuyButton from "./BuyButton";
 import Comments from "./Comments";
 import ScrollReveal, { StaggerContainer, StaggerItem } from "./ScrollReveal";
@@ -13,6 +14,8 @@ export default function Home() {
   const tracks = useQuery(api.tracks.list);
   const albums = useQuery(api.albums.list);
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
+  const { account } = useAccount();
+  const fullAccess = account?.subscribed === true;
 
   // Split tracks into album tracks and singles
   const singles = tracks?.filter((t) => !t.albumId) ?? [];
@@ -117,6 +120,7 @@ export default function Home() {
                         trackId={track._id}
                         currentlyPlaying={currentlyPlaying}
                         onPlay={setCurrentlyPlaying}
+                        fullAccess={fullAccess}
                       />
                     )}
                     <span className="text-accent/70 text-xs font-mono">
@@ -166,6 +170,7 @@ export default function Home() {
                     trackId={track._id}
                     currentlyPlaying={currentlyPlaying}
                     onPlay={setCurrentlyPlaying}
+                    fullAccess={fullAccess}
                   />
                 )}
                 <span className="text-accent font-semibold text-xs sm:text-sm flex-shrink-0">
