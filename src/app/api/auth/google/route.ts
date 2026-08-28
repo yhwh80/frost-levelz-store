@@ -1,13 +1,28 @@
-import { newToken } from "../../../../lib/session";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../convex/_generated/api";
+import { newToken, serverSecret } from "../../../../lib/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 const SITE = process.env.SITE_URL ?? "https://frostlevelz.com";
 export const STATE_COOKIE = "fl_oauth_state";
 
 export async function GET() {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const secret = serverSecret();
+  if (!secret) {
+    return Response.redirect(`${SITE}/account?error=google_unavailable`, 303);
+  }
+
+  // The client id lives in Convex with everything else; it isn't secret (it
+  // appears in the URL below) but keeping it there means one place to configure.
+  let clientId: string | null = null;
+  try {
+    clientId = await convex.action(api.auth.googleClientId, { secret });
+  } catch {
+    clientId = null;
+  }
   if (!clientId) {
     return Response.redirect(`${SITE}/account?error=google_unavailable`, 303);
   }

@@ -30,9 +30,7 @@ function readCookie(request: Request, name: string): string | undefined {
 
 export async function GET(request: Request) {
   const secret = serverSecret();
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  if (!secret || !clientId || !clientSecret) return fail("google_unavailable");
+  if (!secret) return fail("google_unavailable");
 
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
@@ -45,36 +43,21 @@ export async function GET(request: Request) {
   if (!expectedState || state !== expectedState) return fail("bad_state");
 
   try {
-    const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        code,
-        client_id: clientId,
-        client_secret: clientSecret,
-        redirect_uri: `${SITE}/api/auth/google/callback`,
-        grant_type: "authorization_code",
-      }),
+    // The client secret never reaches this server — Convex does the exchange
+    // and hands back only the verified email address.
+    const exchanged = await convex.action(api.auth.exchangeGoogleCode, {
+      secret,
+      code,
+      redirectUri: `${SITE}/api/auth/google/callback`,
     });
-    if (!tokenRes.ok) return fail("token_exchange_failed");
-    const tokens = (await tokenRes.json()) as { access_token?: string };
-    if (!tokens.access_token) return fail("no_access_token");
-
-    // Fetched directly from Google over TLS, so the response is trustworthy
-    // without separately verifying a JWT signature.
-    const infoRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-      headers: { Authorization: `Bearer ${tokens.access_token}` },
-    });
-    if (!infoRes.ok) return fail("userinfo_failed");
-    const info = (await infoRes.json()) as { email?: string; email_verified?: boolean };
-
-    // An unverified Google address proves nothing about who owns it.
-    if (!info.email || info.email_verified === false) return fail("unverified_email");
+    if (!exchanged.ok || !exchanged.email) {
+      return fail(exchanged.reason ?? "google_failed");
+    }
 
     const sessionToken = newToken();
     const result = await convex.action(api.auth.signInWithProvider, {
       secret,
-      email: info.email,
+      email: exchanged.email,
       sessionHash: hashToken(sessionToken),
     });
     if (!result.ok) return fail("signin_failed");
@@ -83,7 +66,6 @@ export async function GET(request: Request) {
       status: 303,
       headers: {
         Location: `${SITE}/account`,
-        // Set the session and clear the one-time state cookie together.
         "Set-Cookie": sessionCookieHeader(sessionToken),
       },
     });

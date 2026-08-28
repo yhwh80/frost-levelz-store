@@ -308,6 +308,76 @@ export const signInWithProvider = action({
   },
 });
 
+/**
+ * Google's client id — not a secret (it's visible in the sign-in URL), but
+ * kept here so both Google values live in one place alongside Stripe and
+ * Resend, rather than splitting configuration across two systems.
+ */
+export const googleClientId = action({
+  args: { secret: v.string() },
+  handler: async (ctx, args): Promise<string | null> => {
+    requireServerSecret(args.secret);
+    return process.env.GOOGLE_CLIENT_ID ?? null;
+  },
+});
+
+/**
+ * Exchanges Google's one-time code for a verified email address.
+ *
+ * This runs in Convex specifically so GOOGLE_CLIENT_SECRET never has to exist
+ * on the web server — the secret is used only here, for the server-to-server
+ * call to Google, and the route only ever receives the resulting email.
+ */
+export const exchangeGoogleCode = action({
+  args: { secret: v.string(), code: v.string(), redirectUri: v.string() },
+  handler: async (
+    ctx,
+    args
+  ): Promise<{ ok: boolean; email?: string; reason?: string }> => {
+    requireServerSecret(args.secret);
+
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    if (!clientId || !clientSecret) {
+      return { ok: false, reason: "google_unavailable" };
+    }
+
+    const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        code: args.code,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: args.redirectUri,
+        grant_type: "authorization_code",
+      }),
+    });
+    if (!tokenRes.ok) return { ok: false, reason: "token_exchange_failed" };
+
+    const tokens = (await tokenRes.json()) as { access_token?: string };
+    if (!tokens.access_token) return { ok: false, reason: "no_access_token" };
+
+    // Fetched straight from Google over TLS, so it's trustworthy without
+    // separately verifying a JWT signature.
+    const infoRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
+    });
+    if (!infoRes.ok) return { ok: false, reason: "userinfo_failed" };
+
+    const info = (await infoRes.json()) as {
+      email?: string;
+      email_verified?: boolean;
+    };
+    // An unverified Google address proves nothing about who owns it.
+    if (!info.email || info.email_verified === false) {
+      return { ok: false, reason: "unverified_email" };
+    }
+
+    return { ok: true, email: info.email };
+  },
+});
+
 export const endSession = action({
   args: { secret: v.string(), sessionHash: v.string() },
   handler: async (ctx, args): Promise<string> => {
