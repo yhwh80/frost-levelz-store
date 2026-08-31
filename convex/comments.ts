@@ -1,5 +1,5 @@
 import { action, query, internalMutation, internalQuery } from "./_generated/server";
-import type { QueryCtx } from "./_generated/server";
+import type { QueryCtx, ActionCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 
@@ -200,7 +200,103 @@ export const post = internalMutation({
   },
 });
 
-// ---- Moderation (internal; run from the CLI until there's an admin page) ----
+// ---- Moderation ----
+
+/**
+ * Every admin action requires BOTH the shared server secret (so only the site's
+ * own routes can call it) AND a signed-in session whose email is on the admin
+ * list. Neither alone is enough.
+ */
+async function requireAdmin(
+  ctx: ActionCtx,
+  secret: string,
+  sessionHash: string
+): Promise<string> {
+  const expected = process.env.DOWNLOAD_SERVER_SECRET;
+  if (!expected || secret !== expected) throw new Error("Not authorized");
+
+  const result = await ctx.runQuery(internal.auth.isAdminSession, {
+    sessionHash,
+  });
+
+  if (!result.admin) throw new Error("Not authorized");
+  return ("email" in result ? result.email : "") ?? "";
+}
+
+export const adminOverview = action({
+  args: { secret: v.string(), sessionHash: v.string() },
+  handler: async (
+    ctx,
+    args
+  ): Promise<{
+    email: string;
+    comments: Array<{
+      id: string;
+      status: string;
+      name: string;
+      body: string;
+      at: string;
+    }>;
+    commentsEnabled: boolean;
+    requiresApproval: boolean;
+  }> => {
+    const email = await requireAdmin(ctx, args.secret, args.sessionHash);
+    const comments = await ctx.runQuery(internal.comments.listAll, { limit: 100 });
+    const settings = await ctx.runQuery(internal.comments.readSettings, {});
+    return { email, comments, ...settings };
+  },
+});
+
+export const adminModerate = action({
+  args: {
+    secret: v.string(),
+    sessionHash: v.string(),
+    commentId: v.id("comments"),
+    action: v.union(v.literal("hide"), v.literal("show"), v.literal("delete")),
+  },
+  handler: async (ctx, args): Promise<string> => {
+    await requireAdmin(ctx, args.secret, args.sessionHash);
+    if (args.action === "delete") {
+      return await ctx.runMutation(internal.comments.remove, {
+        commentId: args.commentId,
+      });
+    }
+    return await ctx.runMutation(internal.comments.setStatus, {
+      commentId: args.commentId,
+      status: args.action === "hide" ? "hidden" : "visible",
+    });
+  },
+});
+
+export const adminSetSetting = action({
+  args: {
+    secret: v.string(),
+    sessionHash: v.string(),
+    key: v.union(
+      v.literal("commentsEnabled"),
+      v.literal("commentsRequireApproval")
+    ),
+    value: v.boolean(),
+  },
+  handler: async (ctx, args): Promise<string> => {
+    await requireAdmin(ctx, args.secret, args.sessionHash);
+    return await ctx.runMutation(internal.comments.setSetting, {
+      key: args.key,
+      value: args.value,
+    });
+  },
+});
+
+export const readSettings = internalQuery({
+  args: {},
+  handler: async (ctx) => ({
+    // Both default to the safe/live values when unset.
+    commentsEnabled: (await getSetting(ctx, "commentsEnabled")) !== false,
+    requiresApproval: (await getSetting(ctx, "commentsRequireApproval")) === true,
+  }),
+});
+
+// ---- Internal helpers used by the actions above ----
 
 export const listAll = internalQuery({
   args: { limit: v.optional(v.number()) },

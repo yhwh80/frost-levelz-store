@@ -154,6 +154,31 @@ export function subscriptionIsActive(sub: Doc<"subscriptions"> | null): boolean 
   return true;
 }
 
+/**
+ * Admins are named by email in the ADMIN_EMAILS env var (comma separated).
+ * Deliberately not a database flag: an env var can't be granted by a bug in
+ * some other mutation, and there is no UI anywhere that can promote someone.
+ */
+export function emailIsAdmin(email: string): boolean {
+  const list = (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return list.includes(email.trim().toLowerCase());
+}
+
+export const isAdminSession = internalQuery({
+  args: { sessionHash: v.string() },
+  handler: async (ctx, args) => {
+    const resolved = await resolveSession(ctx, args.sessionHash);
+    if (!resolved) return { admin: false as const };
+    return {
+      admin: emailIsAdmin(resolved.user.email),
+      email: resolved.user.email,
+    };
+  },
+});
+
 /** Used by the streaming route to decide whether to serve a full track. */
 export const checkAccess = internalQuery({
   args: { sessionHash: v.string() },

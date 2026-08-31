@@ -6,6 +6,9 @@ import { v } from "convex/values";
 
 const FROM = process.env.EMAIL_FROM ?? "Frost Levelz <music@frostlevelz.com>";
 const REPLY_TO = "Frostlevelmanagement@gmail.com";
+// Where moderation alerts go. Configurable so alerts can be pointed at whoever
+// is actually watching, without a code change.
+const ADMIN_ALERT_TO = process.env.ADMIN_ALERT_EMAIL ?? REPLY_TO;
 const SITE = process.env.SITE_URL ?? "https://frostlevelz.com";
 
 const ACCENT = "#89CFF0";
@@ -167,10 +170,11 @@ ${args.pending ? "A comment is waiting for approval." : "A new comment is live o
 <p style="margin:0 0 6px;font-size:13px;color:${ACCENT};font-weight:bold;">${escapeHtml(args.name)}</p>
 <p style="margin:0;font-size:14px;line-height:1.6;color:#d7d7e2;white-space:pre-wrap;">${escapeHtml(args.body)}</p>
 </div>
-${button(`${SITE}/#comments`, "View on the site")}`;
+${button(`${SITE}/admin`, "Moderate this comment")}
+<p style="margin:0;font-size:12px;color:#6b6b7b;">Opens the moderation page, where you can hide or delete it.</p>`;
 
     return await send({
-      to: REPLY_TO,
+      to: ADMIN_ALERT_TO,
       subject: `New comment from ${args.name}`,
       html: shell("New comment", inner),
     });
