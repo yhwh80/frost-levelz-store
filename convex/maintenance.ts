@@ -113,6 +113,30 @@ export const deleteAccount = internalMutation({
   },
 });
 
+/**
+ * Repairs a subscription row whose currentPeriodEnd was stored as NaN or 0
+ * (from reading current_period_end off the subscription object, which Stripe
+ * moved onto the subscription item). Pass the correct unix seconds from Stripe.
+ */
+export const fixSubscriptionPeriodEnd = internalMutation({
+  args: { stripeSubscriptionId: v.string(), periodEndSeconds: v.number() },
+  handler: async (ctx, args) => {
+    const sub = await ctx.db
+      .query("subscriptions")
+      .withIndex("by_stripe_subscription", (q) =>
+        q.eq("stripeSubscriptionId", args.stripeSubscriptionId)
+      )
+      .first();
+    if (!sub) return "not found";
+
+    await ctx.db.patch(sub._id, {
+      currentPeriodEnd: args.periodEndSeconds * 1000,
+      updatedAt: Date.now(),
+    });
+    return `set to ${new Date(args.periodEndSeconds * 1000).toISOString()}`;
+  },
+});
+
 export const pruneStorage = internalMutation({
   args: {
     // "orphans" = files no document references. "all" = every stored file,

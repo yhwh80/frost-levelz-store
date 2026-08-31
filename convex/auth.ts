@@ -135,11 +135,23 @@ async function resolveSession(
   return { user, subscription: subscription ?? null };
 }
 
-/** Active means: a status that grants access, and the paid period hasn't ended. */
+/**
+ * Active means: a status that grants access, and the paid period hasn't ended.
+ *
+ * The date is treated as a backstop, not the primary signal — Stripe's status
+ * is authoritative. A missing or non-finite period end (0, or NaN from an older
+ * bad write) must not silently grant or deny access, so it falls back to status
+ * alone rather than comparing against a meaningless number.
+ */
 export function subscriptionIsActive(sub: Doc<"subscriptions"> | null): boolean {
   if (!sub) return false;
-  if (sub.currentPeriodEnd < Date.now()) return false;
-  return ["active", "trialing", "past_due"].includes(sub.status);
+  if (!["active", "trialing", "past_due"].includes(sub.status)) return false;
+
+  const end = sub.currentPeriodEnd;
+  if (typeof end === "number" && Number.isFinite(end) && end > 0) {
+    return end > Date.now();
+  }
+  return true;
 }
 
 /** Used by the streaming route to decide whether to serve a full track. */

@@ -225,13 +225,31 @@ export const handleWebhook = action({
         const status =
           event.type === "customer.subscription.deleted" ? "canceled" : sub.status;
 
+        // Stripe moved current_period_end off the subscription object and onto
+        // each subscription item. Read the item first, fall back to the old
+        // top-level field, and store 0 rather than NaN if neither is present.
+        const rawPeriodEnd =
+          (sub.items?.data?.[0] as unknown as { current_period_end?: number })
+            ?.current_period_end ??
+          (sub as unknown as { current_period_end?: number }).current_period_end;
+
+        const periodEnd =
+          typeof rawPeriodEnd === "number" && Number.isFinite(rawPeriodEnd)
+            ? rawPeriodEnd * 1000
+            : 0;
+
+        if (periodEnd === 0) {
+          console.error(
+            `[stripe] no current_period_end found for ${sub.id} — storing 0`
+          );
+        }
+
         await ctx.runMutation(internal.subscriptions.upsertFromStripe, {
           stripeSubscriptionId: sub.id,
           stripeCustomerId: customerId,
           email,
           status,
-          currentPeriodEnd: (sub as unknown as { current_period_end: number })
-            .current_period_end * 1000,
+          currentPeriodEnd: periodEnd,
           cancelAtPeriodEnd: sub.cancel_at_period_end ?? false,
         });
       } else {

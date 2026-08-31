@@ -87,10 +87,17 @@ export const listSubscribers = internalQuery({
     const out = [];
     for (const s of subs) {
       const user = await ctx.db.get(s.userId);
+      // Never let a bad stored date throw — a support view that crashes is
+      // worse than one showing "unknown".
+      const end = s.currentPeriodEnd;
+      const renews =
+        typeof end === "number" && Number.isFinite(end) && end > 0
+          ? new Date(end).toISOString().slice(0, 10)
+          : "unknown";
       out.push({
         email: user?.email ?? "?",
         status: s.status,
-        renews: new Date(s.currentPeriodEnd).toISOString().slice(0, 10),
+        renews,
         cancelling: s.cancelAtPeriodEnd ?? false,
       });
     }
