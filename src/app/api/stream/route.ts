@@ -1,6 +1,6 @@
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../../../convex/_generated/api";
-import { hashToken, readSessionCookie, serverSecret } from "../../../lib/session";
+import { hashToken, readSessionToken, serverSecret } from "../../../lib/session";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 export const runtime = "nodejs";
@@ -27,7 +27,7 @@ export async function GET(request: Request) {
   const trackId = new URL(request.url).searchParams.get("track");
   if (!trackId) return new Response("Missing track", { status: 400 });
 
-  const sessionToken = readSessionCookie(request);
+  const sessionToken = readSessionToken(request);
   if (!sessionToken) return new Response("Sign in to listen", { status: 401 });
 
   let me;

@@ -20,6 +20,29 @@ export function serverSecret(): string | undefined {
   return process.env.DOWNLOAD_SERVER_SECRET;
 }
 
+/**
+ * The session token, however it arrived.
+ *
+ * The web sends it as an httpOnly cookie. A native app can't rely on that — a
+ * Capacitor shell runs on its own origin, so the cookie would be treated as
+ * third-party and dropped — so it sends the same token as a bearer header
+ * instead. Same tokens, same sessions table, just a different envelope.
+ *
+ * The header is checked first so an app's explicit credential always wins over
+ * a stale cookie that might be lying around in its webview.
+ */
+export function readSessionToken(request: Request): string | undefined {
+  const auth = request.headers.get("authorization");
+  if (auth) {
+    const [scheme, ...rest] = auth.trim().split(/\s+/);
+    if (scheme.toLowerCase() === "bearer") {
+      const token = rest.join("");
+      if (token) return token;
+    }
+  }
+  return readSessionCookie(request);
+}
+
 export function readSessionCookie(request: Request): string | undefined {
   const header = request.headers.get("cookie");
   if (!header) return undefined;

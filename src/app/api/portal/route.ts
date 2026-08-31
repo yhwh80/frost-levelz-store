@@ -1,6 +1,6 @@
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../../../convex/_generated/api";
-import { hashToken, readSessionCookie, serverSecret } from "../../../lib/session";
+import { hashToken, readSessionToken, serverSecret } from "../../../lib/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     return Response.json({ ok: false, reason: "Unavailable." }, { status: 503 });
   }
 
-  const sessionToken = readSessionCookie(request);
+  const sessionToken = readSessionToken(request);
   if (!sessionToken) {
     return Response.json({ ok: false, reason: "Please sign in." }, { status: 401 });
   }

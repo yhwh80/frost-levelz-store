@@ -1,6 +1,6 @@
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../../../convex/_generated/api";
-import { hashToken, readSessionCookie, serverSecret } from "../../../lib/session";
+import { hashToken, readSessionToken, serverSecret } from "../../../lib/session";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 export const runtime = "nodejs";
@@ -14,7 +14,7 @@ const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
  * a mistake here can't grant access on its own.
  */
 async function sessionHashOrNull(request: Request): Promise<string | null> {
-  const token = readSessionCookie(request);
+  const token = readSessionToken(request);
   return token ? hashToken(token) : null;
 }
 

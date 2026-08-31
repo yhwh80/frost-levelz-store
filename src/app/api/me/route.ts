@@ -3,7 +3,7 @@ import { api } from "../../../../convex/_generated/api";
 import {
   clearCookieHeader,
   hashToken,
-  readSessionCookie,
+  readSessionToken,
   serverSecret,
 } from "../../../lib/session";
 
@@ -17,7 +17,7 @@ const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
  * cookie and asks this route, which does the lookup server-side.
  */
 export async function GET(request: Request) {
-  const token = readSessionCookie(request);
+  const token = readSessionToken(request);
   if (!token) return Response.json({ signedIn: false });
 
   try {
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
 
 /** Sign out: drop the session server-side and clear the cookie. */
 export async function DELETE(request: Request) {
-  const token = readSessionCookie(request);
+  const token = readSessionToken(request);
   const secret = serverSecret();
 
   if (token && secret) {
