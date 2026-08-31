@@ -399,6 +399,23 @@ export const exchangeGoogleCode = action({
   },
 });
 
+/**
+ * The Stripe customer id for a session, so the site can open the billing
+ * portal. Deliberately not exposed through `auth.me` — the browser has no
+ * business knowing Stripe identifiers; only the server needs this.
+ */
+export const stripeCustomerForSession = action({
+  args: { secret: v.string(), sessionHash: v.string() },
+  handler: async (ctx, args): Promise<string | null> => {
+    requireServerSecret(args.secret);
+    const access = await ctx.runQuery(internal.auth.checkAccess, {
+      sessionHash: args.sessionHash,
+    });
+    if (!access.signedIn) return null;
+    return access.stripeCustomerId ?? null;
+  },
+});
+
 export const endSession = action({
   args: { secret: v.string(), sessionHash: v.string() },
   handler: async (ctx, args): Promise<string> => {

@@ -133,6 +133,23 @@ function AccountBody() {
     }
   };
 
+  const manageBilling = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/portal", { method: "POST" });
+      const data = await res.json();
+      if (data.ok && data.url) window.location.href = data.url;
+      else {
+        setError(data.reason ?? "Couldn't open billing.");
+        setBusy(false);
+      }
+    } catch {
+      setError("Couldn't open billing.");
+      setBusy(false);
+    }
+  };
+
   const signOut = async () => {
     await fetch("/api/me", { method: "DELETE" });
     await refresh();
@@ -172,7 +189,7 @@ function AccountBody() {
           <p className="text-foreground/60 text-sm">
             Every track plays in full across the site.
           </p>
-          {account.renewsAt && (
+          {account.renewsAt && Number.isFinite(account.renewsAt) && account.renewsAt > 0 && (
             <p className="text-foreground/40 text-xs mt-3">
               {account.cancelling ? "Access ends" : "Renews"}{" "}
               {new Date(account.renewsAt).toLocaleDateString("en-GB", {
@@ -182,6 +199,13 @@ function AccountBody() {
               })}
             </p>
           )}
+          <button
+            onClick={manageBilling}
+            disabled={busy}
+            className="mt-4 w-full bg-surface border border-border text-foreground/80 text-xs font-semibold px-4 py-2.5 rounded-lg hover:border-accent/40 hover:text-accent transition-colors disabled:opacity-50"
+          >
+            {busy ? "..." : "Manage or cancel subscription"}
+          </button>
         </div>
       ) : (
         <div className="bg-surface border border-border rounded-lg p-5 mb-5">
