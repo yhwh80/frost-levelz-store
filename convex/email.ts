@@ -181,6 +181,38 @@ ${button(`${SITE}/admin`, "Moderate this comment")}
   },
 });
 
+/** Outage and recovery alerts from the scheduled health check. */
+export const sendHealthAlert = internalAction({
+  args: { down: v.boolean(), details: v.string() },
+  handler: async (ctx, args): Promise<boolean> => {
+    const inner = args.down
+      ? `
+<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#c9c9d6;">
+The health check has failed twice in a row, so this looks like a real problem rather than a blip.
+</p>
+<div style="background:#0f0f16;border-left:3px solid #ef4444;border-radius:6px;padding:14px 16px;">
+<p style="margin:0;font-size:13px;line-height:1.7;color:#d7d7e2;white-space:pre-wrap;">${escapeHtml(args.details)}</p>
+</div>
+${button(SITE, "Check the site")}
+<p style="margin:0;font-size:12px;line-height:1.6;color:#6b6b7b;">
+You'll get one more email when it recovers. No further alerts until then.
+</p>`
+      : `
+<p style="margin:0 0 8px;font-size:15px;line-height:1.6;color:#c9c9d6;">
+${escapeHtml(args.details)}
+</p>
+<p style="margin:0;font-size:13px;color:#8a8a9c;">Nothing further needed.</p>`;
+
+    return await send({
+      to: ADMIN_ALERT_TO,
+      subject: args.down
+        ? "⚠️ frostlevelz.com looks down"
+        : "✅ frostlevelz.com is back",
+      html: shell(args.down ? "Site problem detected" : "Back to normal", inner),
+    });
+  },
+});
+
 /**
  * Lets you confirm the Resend setup end to end without waiting for a real sale.
  *   npx convex run --prod email:sendTest '{"to":"you@example.com"}'
