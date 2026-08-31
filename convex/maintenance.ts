@@ -119,7 +119,11 @@ export const deleteAccount = internalMutation({
  * moved onto the subscription item). Pass the correct unix seconds from Stripe.
  */
 export const fixSubscriptionPeriodEnd = internalMutation({
-  args: { stripeSubscriptionId: v.string(), periodEndSeconds: v.number() },
+  args: {
+    stripeSubscriptionId: v.string(),
+    periodEndSeconds: v.number(),
+    cancelling: v.optional(v.boolean()),
+  },
   handler: async (ctx, args) => {
     const sub = await ctx.db
       .query("subscriptions")
@@ -131,9 +135,12 @@ export const fixSubscriptionPeriodEnd = internalMutation({
 
     await ctx.db.patch(sub._id, {
       currentPeriodEnd: args.periodEndSeconds * 1000,
+      ...(args.cancelling !== undefined ? { cancelAtPeriodEnd: args.cancelling } : {}),
       updatedAt: Date.now(),
     });
-    return `set to ${new Date(args.periodEndSeconds * 1000).toISOString()}`;
+    return `set to ${new Date(args.periodEndSeconds * 1000).toISOString()}${
+      args.cancelling !== undefined ? `, cancelling=${args.cancelling}` : ""
+    }`;
   },
 });
 

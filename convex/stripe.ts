@@ -244,13 +244,27 @@ export const handleWebhook = action({
           );
         }
 
+        // Stripe records a portal cancellation as a `cancel_at` timestamp and
+        // does NOT necessarily set cancel_at_period_end. Reading only the
+        // boolean told a customer who had just cancelled that their
+        // subscription "renews" on the very date their access ends.
+        const cancelAt = (sub as unknown as { cancel_at?: number | null }).cancel_at;
+        const cancelling =
+          sub.cancel_at_period_end === true ||
+          (typeof cancelAt === "number" && cancelAt > 0);
+
         await ctx.runMutation(internal.subscriptions.upsertFromStripe, {
           stripeSubscriptionId: sub.id,
           stripeCustomerId: customerId,
           email,
           status,
-          currentPeriodEnd: periodEnd,
-          cancelAtPeriodEnd: sub.cancel_at_period_end ?? false,
+          // When a cancellation is scheduled, that date is when access really
+          // ends — prefer it over the period end if they ever differ.
+          currentPeriodEnd:
+            cancelling && typeof cancelAt === "number" && cancelAt > 0
+              ? cancelAt * 1000
+              : periodEnd,
+          cancelAtPeriodEnd: cancelling,
         });
       } else {
         console.error("Subscription event with no resolvable email:", sub.id);
