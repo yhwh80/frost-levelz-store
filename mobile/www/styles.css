@@ -9,6 +9,13 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+/*
+ * An explicit `display` in CSS beats the `hidden` attribute's UA rule, so
+ * `.player { display: flex }` was showing the player bar on the sign-in
+ * screen. Make `hidden` win everywhere.
+ */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   background: var(--bg);
