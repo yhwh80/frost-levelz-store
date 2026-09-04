@@ -100,22 +100,22 @@ async function play(track, subscribed) {
     return;
   }
 
-  // The stream endpoint needs the bearer token, which a plain <audio src>
-  // can't send — so fetch it and hand the player a blob URL instead.
+  // An <audio> element can't send an Authorization header, so for full tracks
+  // we swap the session for a short-lived signed URL bound to this track.
+  // (Downloading the audio and playing a blob doesn't work here: CapacitorHttp
+  // routes fetch through native networking, which can't return binary bodies.)
   try {
     if (full) {
-      const res = await fetch(src, {
-        headers: { Authorization: `Bearer ${store.token}` },
-      });
-      if (res.status === 402) {
+      const { status, data } = await api(
+        `/api/stream/ticket?track=${encodeURIComponent(track._id)}`
+      );
+      if (status === 402) {
         $("library-msg").textContent =
           "Subscribe on frostlevelz.com to hear full tracks.";
         return;
       }
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const blob = await res.blob();
-      if (audio.src.startsWith("blob:")) URL.revokeObjectURL(audio.src);
-      audio.src = URL.createObjectURL(blob);
+      if (!data || !data.ok || !data.url) throw new Error(`ticket ${status}`);
+      audio.src = `${SITE}${data.url}`;
     } else {
       audio.src = src;
     }

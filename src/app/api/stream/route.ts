@@ -1,6 +1,7 @@
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../../../convex/_generated/api";
 import { hashToken, readSessionToken, serverSecret } from "../../../lib/session";
+import { verifyTicket } from "../../../lib/playback";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 export const runtime = "nodejs";
@@ -24,22 +25,38 @@ export async function GET(request: Request) {
   const secret = serverSecret();
   if (!secret) return new Response("Unavailable", { status: 503 });
 
-  const trackId = new URL(request.url).searchParams.get("track");
+  const url = new URL(request.url);
+  const trackId = url.searchParams.get("track");
   if (!trackId) return new Response("Missing track", { status: 400 });
 
-  const sessionToken = readSessionToken(request);
-  if (!sessionToken) return new Response("Sign in to listen", { status: 401 });
+  // Two ways in. A signed ticket, for players that can only be handed a URL and
+  // can't set headers — its subscription was checked when it was issued, and it
+  // is bound to this track and expires within the hour. Otherwise a session,
+  // checked here as before.
+  const ticket = url.searchParams.get("ticket");
+  if (ticket) {
+    if (!verifyTicket(ticket, trackId, secret)) {
+      return new Response("Playback link expired — press play again", {
+        status: 401,
+      });
+    }
+  } else {
+    const sessionToken = readSessionToken(request);
+    if (!sessionToken) return new Response("Sign in to listen", { status: 401 });
 
-  let me;
-  try {
-    me = await convex.query(api.auth.me, { sessionHash: hashToken(sessionToken) });
-  } catch {
-    return new Response("Sign in to listen", { status: 401 });
-  }
+    let me;
+    try {
+      me = await convex.query(api.auth.me, {
+        sessionHash: hashToken(sessionToken),
+      });
+    } catch {
+      return new Response("Sign in to listen", { status: 401 });
+    }
 
-  if (!me.signedIn) return new Response("Sign in to listen", { status: 401 });
-  if (!me.subscribed) {
-    return new Response("Subscribe to hear full tracks", { status: 402 });
+    if (!me.signedIn) return new Response("Sign in to listen", { status: 401 });
+    if (!me.subscribed) {
+      return new Response("Subscribe to hear full tracks", { status: 402 });
+    }
   }
 
   let source: { url: string; title: string } | null;
