@@ -1,0 +1,12 @@
+{
+  "appId": "com.frostlevelz.app",
+  "appName": "Frost Levelz",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#0a0a0f"
+  },
+  "server": {
+    "iosScheme": "capacitor"
+  }
+}

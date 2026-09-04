@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no"
+    />
+    <title>Frost Levelz</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!-- Sign in -->
+    <section id="signin" class="screen">
+      <div class="brand">Frost Levelz</div>
+      <h1>Sign in</h1>
+      <p class="muted">
+        Use the same email as your account on frostlevelz.com. We'll send you a
+        link — no password.
+      </p>
+      <input
+        id="email"
+        type="email"
+        inputmode="email"
+        autocomplete="email"
+        placeholder="you@example.com"
+      />
+      <button id="send" class="primary">Email me a sign-in link</button>
+      <p id="signin-msg" class="msg"></p>
+
+      <div id="paste-step" hidden>
+        <p class="muted small">
+          Open the email on this device and tap the link. If it doesn't bring you
+          back, copy the link and paste it here:
+        </p>
+        <input id="pasted" type="text" placeholder="Paste the sign-in link" />
+        <button id="use-link" class="secondary">Use link</button>
+      </div>
+    </section>
+
+    <!-- Library -->
+    <section id="library" class="screen" hidden>
+      <header class="bar">
+        <div>
+          <div class="brand">Frost Levelz</div>
+          <div id="who" class="muted small"></div>
+        </div>
+        <button id="signout" class="link">Sign out</button>
+      </header>
+
+      <div id="locked" class="notice" hidden>
+        <strong>Full Access not active</strong>
+        <p class="muted small">
+          You can play previews here. Full tracks need a subscription, which is
+          managed on the website.
+        </p>
+      </div>
+
+      <ul id="tracks" class="tracks"></ul>
+      <p id="library-msg" class="msg"></p>
+    </section>
+
+    <!-- Now playing -->
+    <footer id="player" class="player" hidden>
+      <button id="toggle" class="play" aria-label="Play or pause">▶</button>
+      <div class="np">
+        <div id="np-title" class="np-title"></div>
+        <div id="np-sub" class="muted small"></div>
+      </div>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>

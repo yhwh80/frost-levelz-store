@@ -42,3 +42,8 @@ next-env.d.ts
 
 # Full tracks (not public)
 /tracks/
+
+# Capacitor / iOS
+/mobile/node_modules
+/mobile/ios/App/Pods
+/mobile/ios/App/App/public
