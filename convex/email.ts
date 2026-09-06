@@ -146,6 +146,10 @@ ${button(args.url, "Sign in")}
 <p style="margin:0;font-size:13px;line-height:1.6;color:#8a8a9c;">
 This link works once and expires in 15 minutes.
 </p>
+<p style="margin:16px 0 0;font-size:12px;line-height:1.6;color:#6b6b7b;">
+If the button doesn't work, copy and paste this address:<br />
+<span style="color:#8a8a9c;word-break:break-all;">${args.url}</span>
+</p>
 <p style="margin:16px 0 0;font-size:13px;line-height:1.6;color:#8a8a9c;">
 If you didn't ask to sign in, you can ignore this email — nobody can access your account without this link.
 </p>`;

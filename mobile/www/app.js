@@ -304,30 +304,60 @@ $("send").addEventListener("click", async () => {
  */
 $("use-link").addEventListener("click", async () => {
   const raw = $("pasted").value.trim();
-  const msg = $("signin-msg");
   const match = raw.match(/[?&]token=([^&\s]+)/);
   if (!match) {
-    msg.className = "msg err";
-    msg.textContent = "That doesn't look like a sign-in link.";
+    $("signin-msg").className = "msg err";
+    $("signin-msg").textContent = "That doesn't look like a sign-in link.";
     return;
   }
+  await signInWithToken(decodeURIComponent(match[1]));
+});
+
+/**
+ * Signs in when iOS hands the app a frostlevelz://auth?token=... URL.
+ *
+ * Tapping "Open the app" on the sign-in page fires this, so the token never has
+ * to be copied by hand. The token is still single-use and short-lived — this
+ * only changes how it gets here.
+ */
+async function signInWithToken(token) {
+  const msg = $("signin-msg");
+  msg.className = "msg";
+  msg.textContent = "Signing you in...";
 
   const { data } = await api("/api/auth/session", {
     method: "POST",
-    body: JSON.stringify({ token: decodeURIComponent(match[1]) }),
+    body: JSON.stringify({ token }),
   });
 
   if (data && data.ok && data.sessionToken) {
     store.token = data.sessionToken;
+    msg.textContent = "";
     await restore();
   } else {
     msg.className = "msg err";
     msg.textContent =
       data && data.reason === "already_used"
-        ? "That link has already been used — request a new one."
+        ? "That link was already used — request a new one."
         : "That link didn't work. Request a new one.";
   }
-});
+}
+
+function handleDeepLink(url) {
+  if (!url) return;
+  const match = String(url).match(/[?&]token=([^&\s]+)/);
+  if (match) void signInWithToken(decodeURIComponent(match[1]));
+}
+
+// Capacitor delivers the URL that opened the app. Both cases matter: the app
+// already running in the background, and a cold start from the link.
+if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+  const CapApp = window.Capacitor.Plugins.App;
+  CapApp.addListener("appUrlOpen", (event) => handleDeepLink(event && event.url));
+  CapApp.getLaunchUrl()
+    .then((res) => handleDeepLink(res && res.url))
+    .catch(() => {});
+}
 
 $("signout").addEventListener("click", async () => {
   await api("/api/me", { method: "DELETE" });

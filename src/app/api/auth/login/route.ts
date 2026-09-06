@@ -35,7 +35,10 @@ export async function POST(request: Request) {
       return Response.json({ ok: false, reason: result.reason });
     }
 
-    const url = `${SITE}/api/auth/callback?token=${encodeURIComponent(token)}`;
+    // Points at a landing page rather than straight at the callback, so the
+    // same link can open the app on a phone or the site on a desktop without
+    // consuming the one-time token before the choice is made.
+    const url = `${SITE}/signin?token=${encodeURIComponent(token)}`;
     const sent = await convex.action(api.auth.deliverLoginLink, {
       secret,
       email: result.email!,
