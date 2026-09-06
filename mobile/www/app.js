@@ -66,11 +66,61 @@ async function loadCatalogue() {
 
 const audio = new Audio();
 let current = null;
+// Kept so the lock screen and the next/previous buttons know where we are.
+let catalogue = [];
+let subscribed = false;
 
 function setPlayer(track, subtitle) {
   $("player").hidden = false;
   $("np-title").textContent = track.title;
   $("np-sub").textContent = subtitle;
+  updateLockScreen(track, subtitle);
+}
+
+/**
+ * Puts the track on the iOS lock screen and in Control Centre.
+ *
+ * The native side sets an AVAudioSession playback category, which is what makes
+ * iOS treat this app as the current "now playing" source; this supplies the
+ * artwork and title it displays, and wires up the hardware/lock-screen buttons
+ * so headphones and the car stereo work too.
+ */
+function updateLockScreen(track, subtitle) {
+  if (!("mediaSession" in navigator)) return;
+
+  const art = track.coverImageUrl ? `${SITE}${track.coverImageUrl}` : null;
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: track.title,
+    artist: "Frost Levelz",
+    album: subtitle,
+    artwork: art
+      ? [
+          { src: art, sizes: "512x512", type: "image/jpeg" },
+          { src: art, sizes: "256x256", type: "image/jpeg" },
+        ]
+      : [],
+  });
+
+  const at = catalogue.findIndex((t) => t._id === track._id);
+
+  navigator.mediaSession.setActionHandler("play", () => {
+    audio.play();
+    $("toggle").textContent = "❚❚";
+  });
+  navigator.mediaSession.setActionHandler("pause", () => {
+    audio.pause();
+    $("toggle").textContent = "▶";
+  });
+  navigator.mediaSession.setActionHandler(
+    "previoustrack",
+    at > 0 ? () => play(catalogue[at - 1], subscribed) : null
+  );
+  navigator.mediaSession.setActionHandler(
+    "nexttrack",
+    at >= 0 && at < catalogue.length - 1
+      ? () => play(catalogue[at + 1], subscribed)
+      : null
+  );
 }
 
 function markPlaying(id) {
@@ -79,10 +129,12 @@ function markPlaying(id) {
   });
 }
 
-async function play(track, subscribed) {
+async function play(track, hasFullAccess) {
   // Subscribers stream the full track through the authenticated endpoint;
   // everyone else gets the same preview clip the website plays.
-  const full = subscribed;
+  // Named distinctly so it doesn't shadow the module-level `subscribed`, which
+  // the lock-screen handlers rely on.
+  const full = hasFullAccess;
   const src = full
     ? `${SITE}/api/stream?track=${encodeURIComponent(track._id)}`
     : track.previewUrl
@@ -132,8 +184,25 @@ async function play(track, subscribed) {
 }
 
 audio.addEventListener("ended", () => {
+  // Roll on to the next track, so a locked phone keeps playing rather than
+  // falling silent after one song.
+  const at = catalogue.findIndex((t) => t._id === current);
+  if (at >= 0 && at < catalogue.length - 1) {
+    play(catalogue[at + 1], subscribed);
+    return;
+  }
   $("toggle").textContent = "▶";
   markPlaying(null);
+});
+
+// Keep the lock screen's play/pause in step when iOS drives playback.
+audio.addEventListener("play", () => {
+  $("toggle").textContent = "❚❚";
+  if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
+});
+audio.addEventListener("pause", () => {
+  $("toggle").textContent = "▶";
+  if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused";
 });
 
 $("toggle").addEventListener("click", async () => {
@@ -159,6 +228,8 @@ async function openLibrary(me) {
   $("locked").hidden = !!me.subscribed;
 
   const tracks = await loadCatalogue();
+  catalogue = tracks;
+  subscribed = !!me.subscribed;
   const list = $("tracks");
   list.innerHTML = "";
 

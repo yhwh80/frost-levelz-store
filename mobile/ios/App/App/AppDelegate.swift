@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import AVFoundation
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -7,8 +8,27 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        configureAudioSession()
         return true
+    }
+
+    /// Lets audio keep playing when the screen locks or the app is backgrounded.
+    ///
+    /// A web view's default audio session is `.ambient`, which is silenced by the
+    /// ringer switch and stops the moment the app leaves the foreground. Music
+    /// needs `.playback`, which also makes iOS treat the app as the current
+    /// "now playing" source so the lock screen and Control Centre show it.
+    ///
+    /// Paired with the `audio` entry in UIBackgroundModes — both are required;
+    /// either alone silently does nothing.
+    private func configureAudioSession() {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            // Not fatal — playback still works in the foreground.
+            print("[audio] could not configure session: \(error)")
+        }
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
