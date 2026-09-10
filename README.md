@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Frost Levelz — direct-to-fan store
 
-## Getting Started
+A store and mobile app for an independent hip-hop artist: his music sold and streamed direct to fans, with no platform taking a cut in the middle.
 
-First, run the development server:
+**Live at [frostlevelz.com](https://frostlevelz.com)**
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Built to a real brief for a working artist rather than as a template exercise — so every decision below was made against someone else's requirements and someone else's deadline.
+
+## What it does
+
+- **Buy or subscribe.** One-off album and track purchases, plus a subscription for the full catalogue. Stripe handles payment; cancellation is self-service from the account page.
+- **Stream and download.** Purchased audio streams in-browser and in the app, and downloads arrive as a zip with ID3 tags already written, so tracks land in a library with artwork and metadata intact.
+- **Comment and moderate.** Fans can comment. The artist moderates from an admin page — no terminal, no database client.
+- **Mobile.** An iOS app shipped via Capacitor, with background audio, lock-screen controls, and deep links so tapping the sign-in email opens the app. Android is built and going through Play Store registration.
+
+## Decisions worth explaining
+
+**Playback runs on short-lived signed URLs.** Paid audio is never served from a guessable path. A URL is minted per request and expires, so a link pasted into a group chat is dead by the time anyone clicks it. The alternative — public files behind an obscure path — is not access control, it's hope.
+
+**Health checks alert on the second failure, not the first.** A cron runs every 15 minutes, but only emails after two consecutive failures. A redeploy or a momentary blip shouldn't page anyone; a real outage still surfaces inside half an hour. The person receiving that email is an artist, not an on-call engineer, so a false alarm costs more than 15 minutes of delay.
+
+**Cancellations are read from two places.** Stripe records a cancellation either as a boolean or as a `cancel_at` timestamp depending on how it was triggered. Reading only the boolean silently keeps billing people who have cancelled — so both are checked.
+
+**Moderation is a page, not a script.** Anything the artist needs to do routinely has an interface. If the only way to handle a comment were a database query, the feature would effectively not exist.
+
+**Accessibility was specified, not assumed.** The design system fixes a contrast budget up front: the brand blue on the dark background measures 11.2:1, and every interactive element has to clear 4.5:1. Written down in `design.md` so it can't drift.
+
+## Stack
+
+- **Next.js** (App Router) + TypeScript
+- **Convex** — database, server functions, cron jobs
+- **Stripe** — one-off purchases, subscriptions, customer portal, webhooks
+- **Capacitor** — iOS app (Android in progress)
+- **Three.js / react-three-fiber** + Framer Motion — the ice-particle visual and page transitions
+- `node-id3` for tagging downloads, `fflate` for zipping albums
+
+## Layout
+
+```
+convex/          schema, auth, albums, tracks, purchases,
+                 subscriptions, stripe, comments, email,
+                 crons, health, files, maintenance
+src/app/         storefront, account, admin, signin,
+                 privacy, terms, api routes
+src/app/api/     auth · subscribe · portal · webhook
+                 stream · download · comment · admin · me
+mobile/          Capacitor project (iOS)
+design.md        design system: palette, type, contrast budget
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Status
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Live and in use. iOS shipped; Android built and awaiting Play Store registration.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Built by [Simon Powell](https://www.linkedin.com/in/simonpowell-ai).
