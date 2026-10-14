@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Orbitron } from "next/font/google";
 import ConvexClientProvider from "./ConvexClientProvider";
 import "./globals.css";
+import Link from "next/link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -84,9 +85,9 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <nav className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-            <a href="/" className="frost-logo text-xl font-bold tracking-wider uppercase">
+            <Link href="/" className="frost-logo text-xl font-bold tracking-wider uppercase">
               Frost Levelz
-            </a>
+            </Link>
             <div className="flex items-center gap-6 text-sm">
               <a href="#music" className="text-foreground/70 hover:text-accent transition-colors">
                 Music
@@ -97,9 +98,9 @@ export default function RootLayout({
               <a href="#contact" className="text-foreground/70 hover:text-accent transition-colors">
                 Contact
               </a>
-              <a href="/account" className="text-accent hover:text-accent/70 transition-colors font-semibold">
+              <Link href="/account" className="text-accent hover:text-accent/70 transition-colors font-semibold">
                 Account
-              </a>
+              </Link>
             </div>
           </div>
         </nav>
@@ -109,13 +110,13 @@ export default function RootLayout({
         <footer className="border-t border-border py-8 text-center text-sm text-foreground/40">
           <p>&copy; {new Date().getFullYear()} Frost Levelz. All rights reserved.</p>
           <p className="mt-3 flex items-center justify-center gap-4 text-xs">
-            <a href="/privacy" className="hover:text-accent transition-colors">
+            <Link href="/privacy" className="hover:text-accent transition-colors">
               Privacy Policy
-            </a>
+            </Link>
             <span className="text-foreground/20">&middot;</span>
-            <a href="/terms" className="hover:text-accent transition-colors">
+            <Link href="/terms" className="hover:text-accent transition-colors">
               Terms of Service
-            </a>
+            </Link>
           </p>
         </footer>
       </body>

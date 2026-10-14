@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAccount } from "../useAccount";
+import Link from "next/link";
 
 const ERRORS: Record<string, string> = {
   expired: "That sign-in link has expired. Request a new one below.",
@@ -62,7 +63,7 @@ function SignIn() {
 
   return (
     <div>
-      <a
+      <Link
         href="/api/auth/google"
         className="w-full flex items-center justify-center gap-2 bg-white text-[#1f1f1f] font-semibold text-sm px-4 py-3 rounded-lg hover:bg-white/90 transition-colors"
       >
@@ -73,7 +74,7 @@ function SignIn() {
           <path fill="#EA4335" d="M24 10.5c4.2 0 7.1 1.8 8.7 3.3l6-5.8C34.9 4.6 29.9 2 24 2 15.3 2 7.8 7 4.2 14.3l7 5.4C13 14.5 18 10.5 24 10.5z" />
         </svg>
         Continue with Google
-      </a>
+      </Link>
 
       <div className="flex items-center gap-3 my-5">
         <div className="h-px bg-border flex-1" />
@@ -251,12 +252,12 @@ export default function AccountPage() {
         >
           <AccountBody />
         </Suspense>
-        <a
+        <Link
           href="/"
           className="block text-center text-accent hover:underline text-sm mt-6"
         >
           &larr; Back to Store
-        </a>
+        </Link>
       </div>
     </div>
   );

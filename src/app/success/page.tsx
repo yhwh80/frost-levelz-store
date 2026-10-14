@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Suspense, useEffect, useRef } from "react";
+import Link from "next/link";
 
 function DownloadSection({ sessionId }: { sessionId: string }) {
   const download = useQuery(api.files.getPurchaseStatus, {
@@ -153,12 +154,12 @@ function SuccessContent() {
             Ref: {sessionId.slice(-8)}
           </p>
         )}
-        <a
+        <Link
           href="/"
           className="inline-block mt-6 text-accent hover:underline text-sm"
         >
           &larr; Back to Store
-        </a>
+        </Link>
       </div>
     </div>
   );

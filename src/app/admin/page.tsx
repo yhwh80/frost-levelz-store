@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 
 interface Comment {
   id: string;
@@ -60,9 +61,9 @@ export default function AdminPage() {
         <p className="text-foreground/60 text-sm mb-4">
           You need to be signed in as an admin to see this page.
         </p>
-        <a href="/account" className="text-accent hover:underline text-sm">
+        <Link href="/account" className="text-accent hover:underline text-sm">
           Sign in &rarr;
-        </a>
+        </Link>
       </Shell>
     );
   }
@@ -163,9 +164,9 @@ function Shell({ children }: { children: React.ReactNode }) {
         Moderation
       </h1>
       {children}
-      <a href="/" className="inline-block mt-10 text-accent hover:underline text-sm">
+      <Link href="/" className="inline-block mt-10 text-accent hover:underline text-sm">
         &larr; Back to Store
-      </a>
+      </Link>
     </div>
   );
 }
