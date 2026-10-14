@@ -18,10 +18,40 @@ const orbitron = Orbitron({
   subsets: ["latin"],
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://frostlevelz.com";
+const TITLE = "Frost Levelz | Official Music Store";
+const DESCRIPTION =
+  "Buy and download music directly from Frost Levelz. Hip-hop & rap straight from Brixton, London.";
+
 export const metadata: Metadata = {
-  title: "Frost Levelz | Official Music Store",
-  description:
-    "Buy and download music directly from Frost Levelz. Hip-hop & rap straight from Brixton, London.",
+  // Required for the relative image paths below to render as absolute URLs in
+  // the og:/twitter: tags. Without it Next falls back to localhost and every
+  // share preview breaks.
+  metadataBase: new URL(SITE_URL),
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    type: "website",
+    siteName: "Frost Levelz",
+    locale: "en_GB",
+    url: "/",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [
+      {
+        url: "/og.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Ghost-Writer album artwork, Frost Levelz",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: ["/og.jpg"],
+  },
   // iOS ignores much of the web manifest, so the home-screen behaviour has to
   // be declared with these Apple-specific tags as well.
   appleWebApp: {
