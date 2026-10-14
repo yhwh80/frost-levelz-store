@@ -1,6 +1,7 @@
 import { action, query, internalMutation, internalQuery } from "./_generated/server";
 import type { QueryCtx, ActionCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { requireServerSecret } from "./auth";
 import { v } from "convex/values";
 
 const MAX_NAME = 40;
@@ -88,10 +89,7 @@ export const submit = action({
     ipHash: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<{ ok: boolean; reason?: string; pending?: boolean }> => {
-    const expected = process.env.DOWNLOAD_SERVER_SECRET;
-    if (!expected || args.secret !== expected) {
-      throw new Error("Not authorized");
-    }
+    requireServerSecret(args.secret);
 
     const result: { ok: boolean; reason?: string; pending?: boolean } =
       await ctx.runMutation(internal.comments.post, {
@@ -212,8 +210,7 @@ async function requireAdmin(
   secret: string,
   sessionHash: string
 ): Promise<string> {
-  const expected = process.env.DOWNLOAD_SERVER_SECRET;
-  if (!expected || secret !== expected) throw new Error("Not authorized");
+  requireServerSecret(secret);
 
   const result = await ctx.runQuery(internal.auth.isAdminSession, {
     sessionHash,

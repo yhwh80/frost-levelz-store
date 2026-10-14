@@ -1,6 +1,6 @@
 "use node";
 
-import { action, internalAction } from "./_generated/server";
+import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 
@@ -221,7 +221,7 @@ ${escapeHtml(args.details)}
  * Lets you confirm the Resend setup end to end without waiting for a real sale.
  *   npx convex run --prod email:sendTest '{"to":"you@example.com"}'
  */
-export const sendTest = action({
+export const sendTest = internalAction({
   args: { to: v.string() },
   handler: async (ctx, args): Promise<string> => {
     if (!process.env.RESEND_API_KEY) {

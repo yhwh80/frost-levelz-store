@@ -12,7 +12,7 @@ const SESSION_TTL_MS = 90 * 24 * 60 * 60 * 1000; // stay signed in for 90 days
 const REQUEST_WINDOW_MS = 15 * 60 * 1000;
 const MAX_REQUESTS_PER_WINDOW = 3;
 
-function requireServerSecret(provided: string) {
+export function requireServerSecret(provided: string) {
   const expected = process.env.DOWNLOAD_SERVER_SECRET;
   if (!expected || provided.length !== expected.length) {
     throw new Error("Not authorized");
