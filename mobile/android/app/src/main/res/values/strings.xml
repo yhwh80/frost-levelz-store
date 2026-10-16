@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Frost Levelz</string>
+    <string name="title_activity_main">Frost Levelz</string>
+    <string name="package_name">com.frostlevelz.app</string>
+    <string name="custom_url_scheme">com.frostlevelz.app</string>
+</resources>
