@@ -144,6 +144,32 @@ export const fixSubscriptionPeriodEnd = internalMutation({
   },
 });
 
+/**
+ * Signs everyone out, everywhere.
+ *
+ * For use after a credential leak: the shared server secret could mint a
+ * session for any email address, so once it's rotated, every session created
+ * before that point has to be treated as untrustworthy. Users simply sign in
+ * again — the cost is a minor inconvenience against the chance of leaving an
+ * attacker's session live.
+ */
+export const revokeAllSessions = internalMutation({
+  args: { confirm: v.string() },
+  handler: async (ctx, args) => {
+    if (args.confirm !== "REVOKE") {
+      throw new Error('Refusing to run: pass confirm:"REVOKE"');
+    }
+    const sessions = await ctx.db.query("sessions").collect();
+    for (const s of sessions) await ctx.db.delete(s._id);
+
+    // Outstanding magic links could also have been issued with the old secret.
+    const tokens = await ctx.db.query("loginTokens").collect();
+    for (const t of tokens) await ctx.db.delete(t._id);
+
+    return `revoked ${sessions.length} sessions and ${tokens.length} pending login links`;
+  },
+});
+
 export const pruneStorage = internalMutation({
   args: {
     // "orphans" = files no document references. "all" = every stored file,

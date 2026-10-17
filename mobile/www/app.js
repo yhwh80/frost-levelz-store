@@ -70,11 +70,84 @@ let current = null;
 let catalogue = [];
 let subscribed = false;
 
+/**
+ * Android background audio bridge.
+ *
+ * iOS needs only UIBackgroundModes:audio plus an AVAudioSession category for
+ * playback to survive backgrounding. Android gives neither for free: without a
+ * foreground service the process is killed once the user leaves the app, and
+ * without a MediaSession there are no lock-screen or headphone controls.
+ * BackgroundAudioService supplies both — this is the bridge to it.
+ *
+ * Playback itself never leaves the <audio> element above, so the notification
+ * and the in-app controls cannot drift out of sync. No-ops on iOS and web.
+ */
+const bg = (() => {
+  const cap = window.Capacitor;
+  const plugin = cap && cap.Plugins && cap.Plugins.BackgroundAudio;
+  const active = !!plugin && cap.getPlatform() === "android";
+  let asked = false;
+
+  function step(delta) {
+    const at = catalogue.findIndex((t) => t._id === current);
+    const next = at >= 0 ? catalogue[at + delta] : null;
+    if (next) play(next, subscribed);
+  }
+
+  if (active) {
+    plugin.addListener("remoteCommand", (ev) => {
+      const action = ev && ev.action;
+      if (action === "play") audio.play();
+      else if (action === "pause") audio.pause();
+      else if (action === "next") step(1);
+      else if (action === "prev") step(-1);
+      else if (action === "stop") {
+        audio.pause();
+        plugin.stop().catch(() => {});
+      }
+    });
+  }
+
+  return {
+    async start(track, subtitle, playing) {
+      if (!active) return;
+      // Android 13+ shows no notification without this, and no notification
+      // means no foreground service, which means no background playback.
+      if (!asked) {
+        asked = true;
+        try {
+          await plugin.requestPermissions();
+        } catch (e) {
+          console.warn("notification permission request failed", e);
+        }
+      }
+      try {
+        await plugin.start({
+          title: track.title,
+          artist: "Frost Levelz",
+          album: subtitle,
+          artworkUrl: track.coverImageUrl ? `${SITE}${track.coverImageUrl}` : null,
+          playing: playing !== false,
+        });
+      } catch (e) {
+        console.warn("background audio start failed", e);
+      }
+    },
+    setPlaying(playing) {
+      if (active) plugin.setPlaying({ playing }).catch(() => {});
+    },
+    stop() {
+      if (active) plugin.stop().catch(() => {});
+    },
+  };
+})();
+
 function setPlayer(track, subtitle) {
   $("player").hidden = false;
   $("np-title").textContent = track.title;
   $("np-sub").textContent = subtitle;
   updateLockScreen(track, subtitle);
+  bg.start(track, subtitle, true);
 }
 
 /**
@@ -193,16 +266,21 @@ audio.addEventListener("ended", () => {
   }
   $("toggle").textContent = "▶";
   markPlaying(null);
+  // Nothing left to play — drop the foreground service rather than leaving a
+  // dead notification sitting in the shade.
+  bg.stop();
 });
 
 // Keep the lock screen's play/pause in step when iOS drives playback.
 audio.addEventListener("play", () => {
   $("toggle").textContent = "❚❚";
   if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
+  bg.setPlaying(true);
 });
 audio.addEventListener("pause", () => {
   $("toggle").textContent = "▶";
   if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused";
+  bg.setPlaying(false);
 });
 
 $("toggle").addEventListener("click", async () => {
@@ -363,6 +441,7 @@ $("signout").addEventListener("click", async () => {
   await api("/api/me", { method: "DELETE" });
   store.token = null;
   audio.pause();
+  bg.stop();
   $("player").hidden = true;
   show("signin");
 });

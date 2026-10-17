@@ -1,0 +1,43 @@
+# Render blueprint for the Frost Levelz storefront.
+#
+# Moved off the self-hosted Coolify VPS after that box was compromised twice.
+# This app has no business being on a server anyone has to patch: Convex holds
+# the data, files and every API key, Stripe handles payments, and the Next.js
+# app is just the renderer.
+#
+# Secrets are deliberately NOT in this file — `sync: false` means Render asks
+# for the value once and stores it, so nothing sensitive is committed.
+services:
+  - type: web
+    name: frost-levelz-store
+    runtime: node
+    plan: starter # 512 MB — comfortable for Next.js; Free sleeps after 15 min
+    region: frankfurt # closest to UK customers
+    branch: main
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      # Baked into the client bundle at BUILD time, not read at runtime —
+      # changing it requires a rebuild, not just a restart.
+      - key: NEXT_PUBLIC_CONVEX_URL
+        value: https://wonderful-octopus-241.convex.cloud
+
+      # Also builds Stripe's checkout success/cancel URLs. Set explicitly
+      # rather than relying on the code's fallback.
+      - key: SITE_URL
+        value: https://frostlevelz.com
+
+      # Shared secret proving requests to Convex came from this app. Must match
+      # DOWNLOAD_SERVER_SECRET in Convex prod exactly, or downloads and sign-in
+      # both break. Rotated 2026-10-16 after the VPS compromise.
+      - key: DOWNLOAD_SERVER_SECRET
+        sync: false
+
+      # Album zips are cached here between requests, which keeps ~101 MB per
+      # download off the Convex bandwidth allowance. Render's disk is ephemeral,
+      # so the cache empties on redeploy and rebuilds on the next download —
+      # the same behaviour it had on the VPS.
+      - key: ZIP_CACHE_DIR
+        value: /tmp/frost-album-cache

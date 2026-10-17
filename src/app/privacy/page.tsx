@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — Frost Levelz",
@@ -211,9 +212,9 @@ export default function PrivacyPage() {
         </section>
       </div>
 
-      <a href="/" className="inline-block mt-12 text-accent hover:underline text-sm">
+      <Link href="/" className="inline-block mt-12 text-accent hover:underline text-sm">
         &larr; Back to Store
-      </a>
+      </Link>
     </div>
   );
 }
