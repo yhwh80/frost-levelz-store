@@ -50,3 +50,6 @@ next-env.d.ts
 
 # App Store Connect API key — private, never commit
 /mobile/private
+
+# Android build outputs — regenerate with gradle, never commit (29 MB)
+/mobile/dist
